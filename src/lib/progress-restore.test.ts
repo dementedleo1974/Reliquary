@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readReliquarySave, sanitizeProgressState } from "./progress.ts";
+import { decodeSaveCode, encodeSaveCode, readReliquarySave, sanitizeProgressState } from "./progress.ts";
 
 test("save import keeps a real stage and drops unknown keys", () => {
   const save = readReliquarySave(
@@ -29,6 +29,23 @@ test("save import keeps a real stage and drops unknown keys", () => {
 test("rejects a file that is not a Reliquary save", () => {
   assert.throws(() => readReliquarySave("{}"), /not a Reliquary save/);
   assert.throws(() => readReliquarySave("x".repeat(200_001)), /too large/);
+});
+
+test("a save code round-trips and still drops unknown keys", async () => {
+  const raw = JSON.stringify({
+    version: 1,
+    app: "reliquary",
+    selectedLine: "zodiac",
+    selectedJob: "pld",
+    shared: {},
+    weapons: { "zodiac:pld": { completed: ["relic"], counts: { books: 3, nope: 9 } } },
+  });
+  const code = await encodeSaveCode(raw);
+  assert.match(code, /^RQ1\./);
+  const next = readReliquarySave(await decodeSaveCode(code));
+  assert.equal(next.weapons["zodiac:pld"]?.counts.books, 3);
+  assert.equal(next.weapons["zodiac:pld"]?.counts.nope, undefined);
+  await assert.rejects(decodeSaveCode("nope"), /not a Reliquary save code/);
 });
 
 test("stored progress cannot switch in an unknown job", () => {

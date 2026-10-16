@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FIGHT_PHASES } from "@/lib/fight-phases";
 import {
   loadDetail,
   loadDrops,
@@ -603,12 +604,24 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
 
           {panel === "plan" && plan ? (
             <div className="mt-4 max-h-[28rem] space-y-3 overflow-y-auto">
-              <p className="text-sm text-fg">{plan.pf}</p>
-              <ol className="list-decimal space-y-2 pl-4 text-sm text-fg">
-                {plan.steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              {(FIGHT_PHASES[plan.n] ?? []).length > 0 ? (
+                <ol className="space-y-2">
+                  {(FIGHT_PHASES[plan.n] ?? []).map((phase, index) => (
+                    <li key={phase.name} className="rounded-md bg-bg px-3 py-2">
+                      <p className="text-sm text-fg">
+                        <span className="mr-2 text-xs tabular text-subtle">{index + 1}</span>
+                        {phase.name}
+                      </p>
+                      <p className="mt-1 text-xs text-accent">{phase.pf}</p>
+                      <p className="mt-1 text-sm text-muted">Wipe: {phase.wipe}</p>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-muted">
+                  No phase card for this duty yet. Use one Party Finder strat and the links below. Do not mix two plans in the same pull.
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {plan.links.map((link) => (
                   <a
@@ -622,9 +635,6 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                   </a>
                 ))}
               </div>
-              <p className="text-xs text-subtle">
-                Party Finder notes, the wiki, and recent forum posts. Use one guide. Do not mix two plans in the same pull.
-              </p>
             </div>
           ) : panel === "drops" ? (
             <div className="mt-4 max-h-[28rem] space-y-4 overflow-y-auto">

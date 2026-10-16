@@ -1,4 +1,4 @@
-import type { LineId, WeaponKind } from "@/lib/relics";
+import type { JobId, LineId, WeaponKind } from "@/lib/relics";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { LINE_GLOW } from "./line-glow";
@@ -30,6 +30,7 @@ const MOTION: Record<WeaponKind, string> = {
 interface Props {
   kind: WeaponKind;
   lineId: LineId;
+  jobId: JobId;
   stageIndex: number;
   stageCount: number;
   name: string;
@@ -41,6 +42,7 @@ interface Props {
 export function WeaponPortrait({
   kind,
   lineId,
+  jobId,
   stageIndex,
   stageCount,
   name,
@@ -53,14 +55,18 @@ export function WeaponPortrait({
   const glow = LINE_GLOW[lineId];
   const dim = size === "sm" ? "size-16" : size === "md" ? "size-28" : "size-64 max-w-full sm:size-72";
   const live = size !== "sm";
-  const [src, setSrc] = useState(`/weapons/${lineId}/${kind}.jpg`);
+  const icon = `/icons/relics/${lineId}/${jobId}/${stageIndex}.png`;
+  const painted = `/weapons/${lineId}/${kind}.jpg`;
+  const [src, setSrc] = useState(icon);
+  const [gameIcon, setGameIcon] = useState(true);
   useEffect(() => {
-    setSrc(`/weapons/${lineId}/${kind}.jpg`);
-  }, [lineId, kind]);
+    setSrc(icon);
+    setGameIcon(true);
+  }, [icon]);
 
   return (
     <div
-      className={cn("weapon-stage relative mx-auto aspect-square overflow-hidden rounded-lg", dim, MOTION[kind], live && "weapon-stage-live")}
+      className={cn("weapon-stage relative mx-auto aspect-square overflow-hidden rounded-lg", dim, !gameIcon && MOTION[kind], live && "weapon-stage-live")}
       data-still={live ? undefined : "true"}
       style={{
         ["--glow" as string]: glow,
@@ -68,13 +74,16 @@ export function WeaponPortrait({
         ["--tier" as string]: String(tier),
       }}
     >
-      <div className="absolute inset-0" style={{ transform: `scale(${0.56 + tier * 0.44})` }}>
+      <div className="absolute inset-0" style={{ transform: gameIcon ? undefined : `scale(${0.56 + tier * 0.44})` }}>
         <img
           src={src}
           alt={live ? `${name}, step ${stageIndex + 1} of ${stageCount}` : ""}
-          className="weapon-plate"
+          className={gameIcon ? "size-full object-contain p-2" : "weapon-plate"}
           draggable={false}
-          onError={() => setSrc(`/weapons/${kind}.jpg`)}
+          onError={() => {
+            setGameIcon(false);
+            setSrc(painted);
+          }}
         />
       </div>
       {live && tier >= 0.6 && <span className="weapon-sheen" aria-hidden />}
@@ -111,6 +120,7 @@ export function WeaponPortrait({
 export function StageStrip({
   kind,
   lineId,
+  jobId,
   stageCount,
   current,
   doneCount,
@@ -119,6 +129,7 @@ export function StageStrip({
 }: {
   kind: WeaponKind;
   lineId: LineId;
+  jobId: JobId;
   stageCount: number;
   current: number;
   doneCount: number;
@@ -140,6 +151,7 @@ export function StageStrip({
           <WeaponPortrait
             kind={kind}
             lineId={lineId}
+            jobId={jobId}
             stageIndex={i}
             stageCount={stageCount}
             name={names[i] ?? ""}

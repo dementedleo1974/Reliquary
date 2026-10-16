@@ -71,6 +71,10 @@ export interface RelicItem {
   /** Account-wide, completed once then skipped on later jobs. */
   shared?: boolean;
   optional?: boolean;
+  /** Named steps for a grind that used to be one counter. Length matches qty. */
+  steps?: string[];
+  /** Marks on the count bar, such as a weapon upgrade or a light milestone. */
+  marks?: { at: number; label: string }[];
 }
 
 export interface RelicPhase {

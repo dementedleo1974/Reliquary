@@ -17,6 +17,7 @@ function appVersion(): string {
   const files = [
     "src/lib/relics/lines.ts",
     "src/lib/progress.ts",
+    "src/lib/fight-phases.ts",
     "src/components/reliquary/app.tsx",
     "src/components/reliquary/atlas.tsx",
     "src/components/reliquary/atlas-load.ts",

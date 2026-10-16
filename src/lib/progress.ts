@@ -214,20 +214,54 @@ export function readReliquarySave(raw: string): SaveData {
   return sanitizeProgressState(data);
 }
 
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+}
+
+function base64UrlToBytes(code: string): Uint8Array {
+  const padded = code.replaceAll("-", "+").replaceAll("_", "/") + "=".repeat((4 - (code.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+export function saveBody(state: Pick<SaveData, "selectedLine" | "selectedJob" | "shared" | "weapons">): string {
+  return JSON.stringify({
+    version: 1,
+    app: "reliquary",
+    selectedLine: state.selectedLine,
+    selectedJob: state.selectedJob,
+    shared: state.shared,
+    weapons: state.weapons,
+  });
+}
+
+/** A portable save. It is the same data as the file, with no account. */
+export async function encodeSaveCode(raw: string): Promise<string> {
+  if (raw.length > MAX_SAVE_CHARS) throw new Error("That file is too large.");
+  const stream = new Blob([new TextEncoder().encode(raw)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  return `RQ1.${bytesToBase64Url(bytes)}`;
+}
+
+export async function decodeSaveCode(code: string): Promise<string> {
+  const trimmed = code.trim();
+  if (!trimmed.startsWith("RQ1.")) throw new Error("That is not a Reliquary save code.");
+  const bytes = base64UrlToBytes(trimmed.slice(4));
+  const copy = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(copy).set(bytes);
+  const stream = new Blob([copy]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const text = await new Response(stream).text();
+  if (text.length > MAX_SAVE_CHARS) throw new Error("That file is too large.");
+  return text;
+}
+
 export function downloadProgressFile() {
   const state = useProgress.getState();
-  const body = JSON.stringify(
-    {
-      version: 1,
-      app: "reliquary",
-      selectedLine: state.selectedLine,
-      selectedJob: state.selectedJob,
-      shared: state.shared,
-      weapons: state.weapons,
-    },
-    null,
-    2,
-  );
+  const body = saveBody(state);
   const blob = new Blob([body], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

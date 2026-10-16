@@ -15,11 +15,14 @@ import {
   Smartphone,
 } from "lucide-react";
 import {
+  decodeSaveCode,
   downloadProgressFile,
+  encodeSaveCode,
   getWeapon,
   itemCount,
   lineCompletion,
   restoreProgressFile,
+  saveBody,
   shoppingList,
   useProgress,
   type ProgressSlice,
@@ -441,7 +444,9 @@ function AndroidInstallBar({ install }: { install: AndroidInstall }) {
 function DownloadMenu({ install }: { install: AndroidInstall }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [code, setCode] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const progress = useProgress();
 
   function onFile(file: File | undefined) {
     if (!file) return;
@@ -462,6 +467,34 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
     reader.readAsText(file);
   }
 
+  async function copyCode() {
+    try {
+      const next = await encodeSaveCode(
+        saveBody({
+          selectedLine: progress.selectedLine,
+          selectedJob: progress.selectedJob,
+          shared: progress.shared,
+          weapons: progress.weapons,
+        }),
+      );
+      setCode(next);
+      await navigator.clipboard.writeText(next);
+      setNote("Save code copied. Paste it on the other device.");
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Could not copy the save code.");
+    }
+  }
+
+  async function applyCode() {
+    try {
+      restoreProgressFile(await decodeSaveCode(code));
+      setNote("Progress restored from the save code.");
+      setOpen(false);
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Could not read that save code.");
+    }
+  }
+
   return (
     <div className="relative">
       <Button variant="ghost" size="sm" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
@@ -469,7 +502,28 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
         <span className="hidden sm:inline">Download</span>
       </Button>
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-64 rounded-lg bg-surface p-2 shadow-[var(--shadow-border)]">
+        <div className="absolute right-0 z-20 mt-2 w-72 rounded-lg bg-surface p-2 shadow-[var(--shadow-border)]">
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
+            onClick={() => void copyCode()}
+          >
+            <ListTodo className="size-4 text-accent" />
+            Copy save code
+          </button>
+          <label className="block px-3 py-2">
+            <span className="text-xs text-subtle">Paste a save code</span>
+            <textarea
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              rows={3}
+              spellCheck={false}
+              className="mt-1 w-full resize-none rounded-sm bg-bg px-2 py-1 text-xs text-fg"
+            />
+            <button type="button" className="mt-1 text-xs text-accent" onClick={() => void applyCode()}>
+              Restore this code
+            </button>
+          </label>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
@@ -498,6 +552,7 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
             {install.installed ? "Installed" : install.android ? "Install on Android" : "Install app"}
           </button>
           {(note || install.note) && <p className="px-3 py-2 text-xs text-muted">{note || install.note}</p>}
+          <p className="px-3 pb-2 text-xs text-subtle">The code is the save. It is not an account.</p>
           <input
             ref={fileRef}
             type="file"
@@ -701,6 +756,7 @@ function WeaponPanel({
           <WeaponPortrait
             kind={job.weapon}
             lineId={line.id}
+            jobId={job.id}
             stageIndex={idx}
             stageCount={line.stages.length}
             name={title}
@@ -731,6 +787,7 @@ function WeaponPanel({
           <StageStrip
             kind={job.weapon}
             lineId={line.id}
+            jobId={job.id}
             stageCount={line.stages.length}
             current={idx}
             doneCount={doneCount}
@@ -906,6 +963,27 @@ function ItemRow({
             </p>
           )}
           {item.cost && <p className="mt-1 text-xs text-accent">{item.cost}</p>}
+          {item.steps && item.steps.length === item.qty && (
+            <ul className="mt-3 grid gap-1 sm:grid-cols-2">
+              {item.steps.map((step, index) => {
+                const on = have > index;
+                return (
+                  <li key={step}>
+                    <button
+                      type="button"
+                      onClick={() => setCount(line.id, job.id, item, on && have === index + 1 ? index : index + 1)}
+                      className={cn(
+                        "w-full rounded-sm px-2 py-1.5 text-left text-xs",
+                        on ? "bg-bg text-good" : "text-muted hover:text-fg",
+                      )}
+                    >
+                      {index + 1}. {step}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -938,6 +1016,22 @@ function ItemRow({
           }}
         />
       </div>
+      {item.marks && item.marks.length > 0 && (
+        <div className="relative mt-1 h-4">
+          {item.marks.map((mark) => (
+            <span
+              key={mark.label}
+              className={cn(
+                "absolute -translate-x-1/2 text-[0.65rem] tabular",
+                have >= mark.at ? "text-good" : "text-subtle",
+              )}
+              style={{ left: `${Math.min(100, (mark.at / item.qty) * 100)}%` }}
+            >
+              {mark.label}
+            </span>
+          ))}
+        </div>
+      )}
     </li>
   );
 }
