@@ -10,6 +10,12 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 - Removed the single-run times and the unofficial census. The Beasts tab now keeps the Lodestone rules: rank 25 at 100 experience each, and the patch 7.57 ranking season.
 
+### Time, gear, and skills
+
+- Time is a timer for each combat job and Beastmaster. A duration is stored only for a run that was started here.
+- Gear lists the documented catch-up set at the end of each expansion. It is not a melded best-in-slot sheet.
+- Skills lists each job's actions in the order the game files teach them, plus the combo parent stored on the action.
+
 ### Beta
 
 - The app is marked Beta in the title and the header. The data can still change as patch notes settle.

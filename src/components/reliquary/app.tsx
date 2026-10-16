@@ -11,9 +11,11 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  Shield,
   ShoppingBag,
   Squirrel,
   Smartphone,
+  Timer,
 } from "lucide-react";
 import {
   decodeSaveCode,
@@ -50,8 +52,11 @@ import { StageStrip, WeaponPortrait } from "./weapon-portrait";
 
 const AtlasView = lazy(() => import("./atlas").then((mod) => ({ default: mod.AtlasView })));
 const BeastView = lazy(() => import("./beasts").then((mod) => ({ default: mod.BeastView })));
+const TimeView = lazy(() => import("./records").then((mod) => ({ default: mod.TimeView })));
+const GearView = lazy(() => import("./records").then((mod) => ({ default: mod.GearView })));
+const SkillsView = lazy(() => import("./records").then((mod) => ({ default: mod.SkillsView })));
 
-type AppView = "tracker" | "list" | "board" | "atlas" | "beasts";
+type AppView = "tracker" | "list" | "board" | "atlas" | "beasts" | "time" | "gear" | "skills";
 
 const SOURCE_FILTERS: Array<ItemSource | "all"> = [
   "all",
@@ -110,7 +115,7 @@ export function ReliquaryApp() {
     <div className="min-h-dvh overflow-x-hidden bg-bg text-fg">
       <Header view={view} onView={setView} install={install} livePatch={livePatch} />
       <main className={cn("mx-auto min-w-0 max-w-6xl px-4 pt-5 sm:px-6", install.showBar ? "pb-28" : "pb-12")}>
-        {view !== "atlas" && view !== "board" && view !== "beasts" && (
+        {view !== "atlas" && view !== "board" && view !== "beasts" && view !== "time" && view !== "gear" && view !== "skills" && (
           <ExpansionNav
             slice={slice}
             selected={line.id}
@@ -127,6 +132,18 @@ export function ReliquaryApp() {
         ) : view === "beasts" ? (
           <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening the bestiary.</p>}>
             <BeastView />
+          </Suspense>
+        ) : view === "time" ? (
+          <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening the time log.</p>}>
+            <TimeView />
+          </Suspense>
+        ) : view === "gear" ? (
+          <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening gear.</p>}>
+            <GearView />
+          </Suspense>
+        ) : view === "skills" ? (
+          <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening skills.</p>}>
+            <SkillsView />
           </Suspense>
         ) : view === "board" ? (
           <BoardView />
@@ -339,6 +356,18 @@ function Header({
             >
               <Squirrel className="size-4" />
               <span className="hidden md:inline">Beasts</span>
+            </Button>
+            <Button variant={view === "time" ? "primary" : "ghost"} size="sm" onClick={() => onView("time")}>
+              <Timer className="size-4" />
+              <span className="hidden lg:inline">Time</span>
+            </Button>
+            <Button variant={view === "gear" ? "primary" : "ghost"} size="sm" onClick={() => onView("gear")}>
+              <Shield className="size-4" />
+              <span className="hidden lg:inline">Gear</span>
+            </Button>
+            <Button variant={view === "skills" ? "primary" : "ghost"} size="sm" onClick={() => onView("skills")}>
+              <ListTodo className="size-4" />
+              <span className="hidden lg:inline">Skills</span>
             </Button>
           </div>
           <UpdateButton livePatch={livePatch} />
