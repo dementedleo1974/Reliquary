@@ -4,6 +4,11 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 ## 2026-10-16
 
+### Jobs and load
+
+- Every combat job is listed on every relic. A later job opens the expansion where that weapon starts.
+- The tracker opens first. Market prices load only on the Market tab. The world loads its zone list first, and drops or fight plans only when those panels are opened.
+
 ### Repository
 
 - The app address is https://github.com/dementedleo1974/Reliquary.

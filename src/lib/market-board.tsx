@@ -59,7 +59,7 @@ function remember(server: string, world: string) {
   }
 }
 
-export function MarketProvider({ children }: { children: ReactNode }) {
+export function MarketProvider({ children, active = false }: { children: ReactNode; active?: boolean }) {
   const [server, setServerState] = useState("Aether");
   const [world, setWorldState] = useState("Adamantoise");
   const [quotes, setQuotes] = useState<Record<number, BoardQuote>>({});
@@ -72,6 +72,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!active) return;
     const key = `${server}:${world}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < FRESH_MS) {
@@ -95,7 +96,7 @@ export function MarketProvider({ children }: { children: ReactNode }) {
     return () => {
       cancel = true;
     };
-  }, [server, world]);
+  }, [server, world, active]);
 
   const setServer = (next: string) => {
     if (serverFor(next) !== next) return;

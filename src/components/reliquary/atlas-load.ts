@@ -172,22 +172,3 @@ export function loadPlans(): Promise<FightPlan[]> {
     });
   return plansPromise;
 }
-
-/** Starts the zone list and the first map before The World is opened. */
-export function prefetchAtlas() {
-  void loadPlaces()
-    .then((file) => {
-      const first =
-        file.places.find((place) => place.name === "Middle La Noscea") ??
-        file.places.find((place) => place.kind === "zone");
-      const src = first ? mapSrc(first.map) : "";
-      if (!src) return;
-      const image = new Image();
-      image.decoding = "async";
-      image.src = src;
-    })
-    .catch(() => {});
-  void loadDetail().catch(() => {});
-  void loadDrops().catch(() => {});
-  void loadPlans().catch(() => {});
-}

@@ -275,6 +275,14 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
       .catch(() => {
         if (!cancel) setError("The map index could not be loaded.");
       });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (panel !== "hunts" && panel !== "vendors") return;
+    let cancel = false;
     void loadDetail()
       .then((file) => {
         if (cancel) return;
@@ -282,6 +290,14 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
         setHunts(file.hunts);
       })
       .catch(() => {});
+    return () => {
+      cancel = true;
+    };
+  }, [panel]);
+
+  useEffect(() => {
+    if (panel !== "drops") return;
+    let cancel = false;
     void loadDrops()
       .then((file) => {
         if (cancel) return;
@@ -289,6 +305,14 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
         setNodes(file.nodes);
       })
       .catch(() => {});
+    return () => {
+      cancel = true;
+    };
+  }, [panel]);
+
+  useEffect(() => {
+    if (panel !== "plan") return;
+    let cancel = false;
     void loadPlans()
       .then((file) => {
         if (!cancel) setPlans(file);
@@ -297,7 +321,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
     return () => {
       cancel = true;
     };
-  }, []);
+  }, [panel]);
 
   useEffect(() => {
     if (placeId || places.length === 0) return;

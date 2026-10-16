@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Coins,
@@ -46,8 +46,8 @@ import { useLivePatch } from "@/lib/use-live-patch";
 import { Button } from "@/components/ui/button";
 import { LINE_GLOW } from "./line-glow";
 import { StageStrip, WeaponPortrait } from "./weapon-portrait";
-import { prefetchAtlas } from "./atlas-load";
-import { AtlasView } from "./atlas";
+
+const AtlasView = lazy(() => import("./atlas").then((mod) => ({ default: mod.AtlasView })));
 
 const SOURCE_FILTERS: Array<ItemSource | "all"> = [
   "all",
@@ -68,7 +68,7 @@ export function ReliquaryApp() {
   const setHydrated = useProgress((s) => s.setHydrated);
   const weapons = useProgress((s) => s.weapons);
   const shared = useProgress((s) => s.shared);
-  const [view, setView] = useState<"tracker" | "list" | "board" | "atlas">("board");
+  const [view, setView] = useState<"tracker" | "list" | "board" | "atlas">("tracker");
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -81,10 +81,6 @@ export function ReliquaryApp() {
     void navigator.serviceWorker.register("/sw.js");
   }, []);
 
-  useEffect(() => {
-    prefetchAtlas();
-  }, []);
-
   const slice: ProgressSlice = { weapons, shared };
   const line = RELIC_LINES.find((l) => l.id === selectedLine) ?? RELIC_LINES[0]!;
   const jobs = jobsForLine(line.id);
@@ -93,20 +89,20 @@ export function ReliquaryApp() {
 
   const filteredJobs = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return jobs;
-    return jobs.filter(
+    if (!q) return JOBS;
+    return JOBS.filter(
       (j) =>
         j.name.toLowerCase().includes(q) ||
         j.abbrev.toLowerCase().includes(q) ||
         j.role.includes(q),
     );
-  }, [jobs, query]);
+  }, [query]);
 
   const install = useAndroidInstall();
   const livePatch = useLivePatch();
 
   return (
-    <MarketProvider>
+    <MarketProvider active={view === "board"}>
     <div className="min-h-dvh overflow-x-hidden bg-bg text-fg">
       <Header view={view} onView={setView} install={install} livePatch={livePatch} />
       <main className={cn("mx-auto min-w-0 max-w-6xl px-4 pt-5 sm:px-6", install.showBar ? "pb-28" : "pb-12")}>
@@ -121,7 +117,9 @@ export function ReliquaryApp() {
           />
         )}
         {view === "atlas" ? (
-          <AtlasView livePatch={livePatch} />
+          <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening the world.</p>}>
+            <AtlasView livePatch={livePatch} />
+          </Suspense>
         ) : view === "board" ? (
           <BoardView />
         ) : view === "list" ? (
@@ -142,7 +140,11 @@ export function ReliquaryApp() {
               selected={job.id}
               query={query}
               onQuery={setQuery}
-              onSelect={selectJob}
+              onSelect={(id) => {
+                const next = JOBS.find((j) => j.id === id);
+                if (next && !jobs.some((j) => j.id === id)) selectLine(next.since);
+                selectJob(id);
+              }}
             />
             <WeaponPanel line={line} job={job} completed={progress.completed} slice={slice} />
           </div>
@@ -629,6 +631,15 @@ function ExpansionNav({
   );
 }
 
+const START_NAME: Record<Job["since"], string> = {
+  zodiac: "Zodiac",
+  anima: "Anima",
+  eureka: "Eureka",
+  resistance: "Resistance",
+  manderville: "Manderville",
+  phantom: "Phantom",
+};
+
 function JobRail({
   line,
   jobs,
@@ -667,7 +678,8 @@ function JobRail({
       </div>
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible">
         {jobs.map((job) => {
-          const done = getWeapon(slice, line.id, job.id).completed.length;
+          const onLine = jobsForLine(line.id).some((j) => j.id === job.id);
+          const done = onLine ? getWeapon(slice, line.id, job.id).completed.length : 0;
           const total = line.stages.length;
           const active = job.id === selected;
           return (
@@ -688,7 +700,7 @@ function JobRail({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">{job.name}</span>
                 <span className="block text-xs tabular text-subtle">
-                  {done}/{total} · {ROLE_LABEL[job.role]}
+                  {onLine ? `${done}/${total} · ${ROLE_LABEL[job.role]}` : `Opens ${START_NAME[job.since]}`}
                 </span>
               </span>
             </button>
