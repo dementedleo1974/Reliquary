@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BEAST_STEPS, BEASTS, HORN_PLAN, NAMED_SWAPS, PLAYER_TIME, type Beast } from "@/lib/beasts";
+import { BEAST_STEPS, BEASTS, HORN_PLAN, NAMED_SWAPS, PROVEN, type Beast } from "@/lib/beasts";
 import { cn } from "@/lib/utils";
 
 const KEY = "reliquary-beasts-v1";
@@ -70,10 +70,10 @@ export function BeastView() {
       <div className="rounded-xl bg-surface p-4 shadow-[var(--shadow-border)] sm:p-6">
         <h2 className="font-display text-3xl text-fg">Beastmaster</h2>
         <p className="mt-1 text-sm text-muted">
-          {ready ? caught.length : 0}/50 caught. Limited job, level cap 50. The bestiary is from 7.56. Ranked play is 7.57.
+          {ready ? caught.length : 0}/50 caught. Limited job, level cap 50. Rules below are from the Lodestone job guide and patch 7.57.
         </p>
         <ul className="mt-4 space-y-2 text-sm text-muted">
-          {PLAYER_TIME.map((line) => (
+          {PROVEN.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>

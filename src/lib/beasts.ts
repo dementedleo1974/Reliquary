@@ -85,11 +85,11 @@ export const HORN_PLAN = [
   },
 ];
 
-export const PLAYER_TIME = [
-  "Most active characters have not spent this time. A 4 October 2026 Lodestone count put Beastmaster at level 50 on about one active character in ten, and about seven in ten had not unlocked it.",
-  "The job level is the short part. A measured loop of level 50 mobs in western Coerthas was about 34 minutes, and that only works if those mobs still give experience. Open-world kills do not get the Blue Mage bonus. FATEs do.",
-  "The long part is beast rank. One player cleared every Third Degree board with 21 beasts at rank 25 and stopped. A fast Second Master's Board was about 15 minutes and paid 57 beast experience. A normal one was 20 to 25.",
-  "Ranked season 1 starts 25 October 2026 at 10:00 p.m. PDT and runs through late November. It is Third Degree only, on your home world. The top 300 on each physical data center are paid.",
+export const PROVEN = [
+  "The job cap is 50. A familiar gains one beast rank per 100 experience, up to 25. Those attributes apply inside the Crucible only.",
+  "A ranked score is Third Degree, with Participate in rankings checked. It uses the last three attempts on each board, recorded on your home world. Standings are grouped by physical data center. Lauda is in Central Shroud (21.9, 22.8).",
+  "Season 1 runs from Sunday, 25 October 2026 at 10:00 p.m. PDT until late November 2026. The exact end is not set. The top 300 receive rewards by Moogle mail.",
+  "Patch 7.57 raised the elite-enemy score from 625 to 800 and the Sleepless Survival bonus from 375 to 1,000.",
 ];
 
 export const NAMED_SWAPS = [
@@ -104,7 +104,6 @@ export const BEAST_STEPS = [
   "Unlock at the Excited Adventurer in New Gridania (11.8, 13.6), quest Strangers in the Wood. You need Dawntrail, one combat job at 50, and the quest The Ultimate Weapon. Cu Sith is handed to you.",
   "Beastmaster stops at 50. The catch checks the enemy you are hitting, so a lower spawn of that beast is valid. Expansion field monsters are above the cap and will not tame.",
   "Raise the job, then catch in level order. Weaken the target under 10% (under 5% if it is sturdy) and use Capture. It is your own mark. A whole party can catch the same enemy.",
-  "The first horn is at level 1, the second at 10, and the third at 20. Level in FATEs until 15, then in the highest dungeon you can enter. Borrow is level 22.",
-  "Call a beast before the pull. Each summon lets you use Tempered Release or Borrow once, not both. Parting Blow is the exit, not a filler.",
+  "You start with one battlehorn. The job guide does not print the levels of the later horns, so those levels are not listed here. Borrow is the kinship button. Each summon is Tempered Release or Borrow, not both. Parting Blow dismisses the beast.",
   "Duty beasts are also gourds. The Crucible vendor's stock grows after the second board of the Crucible of the Unbroken.",
 ];

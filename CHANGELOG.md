@@ -8,7 +8,7 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 - Horns unlock at 1, 10, and 20. FATEs carry the job to 15. That comes from the leveling guide, not from a best-trio list.
 
-- The Beasts tab now includes how much time players are actually spending. About one active character in ten was level 50 on 4 October 2026. Beast rank, not the job level, is the long grind.
+- Removed the single-run times and the unofficial census. The Beasts tab now keeps the Lodestone rules: rank 25 at 100 experience each, and the patch 7.57 ranking season.
 
 ### Beta
 
