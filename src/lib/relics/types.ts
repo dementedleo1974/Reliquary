@@ -73,6 +73,11 @@ export interface RelicItem {
   optional?: boolean;
 }
 
+export interface RelicPhase {
+  name: string;
+  rate: string;
+}
+
 export interface RelicStage {
   id: string;
   name: string;
@@ -86,6 +91,8 @@ export interface RelicStage {
   items: RelicItem[];
   duties?: string[];
   notes?: string;
+  /** Chance for each phase of a random step. */
+  phases?: RelicPhase[];
 }
 
 export interface JobStart {

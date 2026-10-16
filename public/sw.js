@@ -1,11 +1,11 @@
-const CACHE = "reliquary-v6";
+const CACHE = "reliquary-v8";
 
 function mapPath(path) {
-  return /^\/maps\/[a-z0-9]{1,12}\/\d{2}$/.test(path);
+  return /^\/maps\/[a-z0-9]{1,12}\/\d{2}\.jpg$/.test(path);
 }
 
 function atlasPath(url) {
-  return url.pathname === "/atlas-places.json" || url.pathname === "/atlas-detail.json" || url.pathname === "/atlas.json";
+  return url.pathname === "/atlas-places.json" || url.pathname === "/atlas-detail.json" || url.pathname === "/atlas.json" || url.pathname === "/drops.json" || url.pathname === "/strategies.json";
 }
 
 function cacheable(url) {
@@ -17,6 +17,8 @@ function cacheable(url) {
     path === "/atlas.json" ||
     path === "/atlas-places.json" ||
     path === "/atlas-detail.json" ||
+    path === "/drops.json" ||
+    path === "/strategies.json" ||
     path === "/manifest.webmanifest" ||
     path === "/favicon.svg" ||
     path.startsWith("/assets/") ||

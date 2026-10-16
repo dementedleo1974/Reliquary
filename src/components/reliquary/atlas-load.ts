@@ -8,6 +8,32 @@ interface PlacesFile {
   places: AtlasPlace[];
 }
 
+export interface DutyDrop {
+  n: string;
+  d: string;
+  g: string;
+  lv: number;
+  sy: number;
+  coffers: Array<{ x?: number; y?: number; items: string[] }>;
+  fights: Array<{ t: string; items: string[] }>;
+  extra: string[];
+}
+
+export interface NodeDrop {
+  z: string;
+  n: string;
+  k: string;
+  lv: number;
+  x: number;
+  y: number;
+  items: string[];
+}
+
+export interface DropsFile {
+  duties: DutyDrop[];
+  nodes: NodeDrop[];
+}
+
 interface DetailFile {
   vendors: AtlasVendor[];
   hunts: AtlasHunt[];
@@ -17,11 +43,22 @@ let placesCache: PlacesFile | null = null;
 let detailCache: DetailFile | null = null;
 let placesPromise: Promise<PlacesFile> | null = null;
 let detailPromise: Promise<DetailFile> | null = null;
+export interface FightPlan {
+  n: string;
+  pf: string;
+  steps: string[];
+  links: Array<{ s: string; u: string }>;
+}
+
+let plansCache: FightPlan[] | null = null;
+let plansPromise: Promise<FightPlan[]> | null = null;
+let dropsCache: DropsFile | null = null;
+let dropsPromise: Promise<DropsFile> | null = null;
 
 export function mapSrc(map: string) {
   if (!MAP_ID.test(map)) return "";
   const [territory, index] = map.split("/");
-  return `/maps/${territory}/${index}`;
+  return `/maps/${territory}/${index}.jpg`;
 }
 
 export function peekPlaces(): PlacesFile | null {
@@ -98,6 +135,44 @@ export function loadDetail(): Promise<DetailFile> {
   return detailPromise;
 }
 
+export function loadDrops(): Promise<DropsFile> {
+  if (dropsCache) return Promise.resolve(dropsCache);
+  dropsPromise ??= readJson("/drops.json", 2_500_000)
+    .then((json) => {
+      const duties = (json as { duties?: unknown }).duties;
+      const nodes = (json as { nodes?: unknown }).nodes;
+      if (!Array.isArray(duties) || !Array.isArray(nodes)) throw new Error("missing");
+      if (duties.length > 2_000 || nodes.length > 3_000) throw new Error("missing");
+      const drops = { duties: duties as DutyDrop[], nodes: nodes as NodeDrop[] };
+      dropsCache = drops;
+      return drops;
+    })
+    .finally(() => {
+      dropsPromise = null;
+    });
+  return dropsPromise;
+}
+
+export function loadPlans(): Promise<FightPlan[]> {
+  if (plansCache) return Promise.resolve(plansCache);
+  plansPromise ??= readJson("/strategies.json", 800_000)
+    .then((json) => {
+      const plans = (json as { plans?: unknown }).plans;
+      if (!Array.isArray(plans) || plans.length > 400) throw new Error("missing");
+      const clean = plans.filter((plan): plan is FightPlan => {
+        if (typeof plan !== "object" || plan === null) return false;
+        const row = plan as FightPlan;
+        return typeof row.n === "string" && typeof row.pf === "string" && Array.isArray(row.steps) && Array.isArray(row.links);
+      });
+      plansCache = clean;
+      return clean;
+    })
+    .finally(() => {
+      plansPromise = null;
+    });
+  return plansPromise;
+}
+
 /** Starts the zone list and the first map before The World is opened. */
 export function prefetchAtlas() {
   void loadPlaces()
@@ -113,4 +188,6 @@ export function prefetchAtlas() {
     })
     .catch(() => {});
   void loadDetail().catch(() => {});
+  void loadDrops().catch(() => {});
+  void loadPlans().catch(() => {});
 }

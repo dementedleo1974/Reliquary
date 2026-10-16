@@ -1,7 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { loadDetail, loadPlaces, mapSrc, peekDetail, peekPlaces, rememberedPlaces } from "./atlas-load";
+import {
+  loadDetail,
+  loadDrops,
+  loadPlaces,
+  loadPlans,
+  mapSrc,
+  peekDetail,
+  peekPlaces,
+  rememberedPlaces,
+  type DutyDrop,
+  type FightPlan,
+  type NodeDrop,
+} from "./atlas-load";
 
 export type AtlasKind = "zone" | "city" | "dungeon" | "trial" | "raid" | "other";
 
@@ -94,6 +106,138 @@ const KIND_LABEL: Record<AtlasKind, string> = {
   other: "Duty",
 };
 
+const DIFF_ORDER = ["Normal", "Hard", "Extreme", "Savage", "Ultimate", "Unreal"];
+
+function normName(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/['’:.]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function gamePct(game: number, size: number) {
+  if (!Number.isFinite(game) || game <= 0) return null;
+  const pct = (((size || 100) * (game - 1)) / 2 / 2048) * 100;
+  if (pct < 0 || pct > 100) return null;
+  return pct;
+}
+
+function MapStage({
+  src,
+  children,
+  onError,
+}: {
+  src: string;
+  children: React.ReactNode;
+  onError: () => void;
+}) {
+  const frame = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const [view, setView] = useState({ s: 1, x: 0, y: 0 });
+
+  useEffect(() => {
+    setView({ s: 1, x: 0, y: 0 });
+  }, [src]);
+
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const px = event.clientX - rect.left;
+      const py = event.clientY - rect.top;
+      setView((current) => {
+        const next = Math.min(4, Math.max(1, current.s * (event.deltaY < 0 ? 1.15 : 0.87)));
+        const scale = next / current.s;
+        const x = px - (px - current.x) * scale;
+        const y = py - (py - current.y) * scale;
+        const minX = Math.min(0, rect.width - rect.width * next);
+        const minY = Math.min(0, rect.height - rect.height * next);
+        return {
+          s: next,
+          x: Math.min(0, Math.max(minX, x)),
+          y: Math.min(0, Math.max(minY, y)),
+        };
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  return (
+    <div
+      ref={frame}
+      className="relative aspect-square touch-none overflow-hidden rounded-md bg-[#07080c] shadow-[var(--shadow-border)]"
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        drag.current = { x: view.x, y: view.y, px: event.clientX, py: event.clientY };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const start = drag.current;
+        const rect = frame.current?.getBoundingClientRect();
+        if (!start || !rect) return;
+        const minX = Math.min(0, rect.width - rect.width * view.s);
+        const minY = Math.min(0, rect.height - rect.height * view.s);
+        setView((current) => ({
+          ...current,
+          x: Math.min(0, Math.max(minX, start.x + event.clientX - start.px)),
+          y: Math.min(0, Math.max(minY, start.y + event.clientY - start.py)),
+        }));
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.s})`, transformOrigin: "0 0" }}
+      >
+        <img
+          key={src}
+          src={src}
+          alt=""
+          decoding="async"
+          fetchPriority="high"
+          draggable={false}
+          className="pointer-events-none h-full w-full object-contain"
+          onError={onError}
+        />
+        {children}
+      </div>
+      <div className="absolute bottom-2 right-2 flex gap-1">
+        <button
+          type="button"
+          className="rounded-sm bg-bg/90 px-2 py-1 text-xs text-fg shadow-[var(--shadow-border)]"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => setView((current) => ({ ...current, s: Math.min(4, current.s * 1.25) }))}
+        >
+          +
+        </button>
+        <button
+          type="button"
+          className="rounded-sm bg-bg/90 px-2 py-1 text-xs text-fg shadow-[var(--shadow-border)]"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => setView({ s: 1, x: 0, y: 0 })}
+        >
+          Reset
+        </button>
+        <button
+          type="button"
+          className="rounded-sm bg-bg/90 px-2 py-1 text-xs text-fg shadow-[var(--shadow-border)]"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => setView((current) => ({ s: Math.max(1, current.s / 1.25), x: 0, y: 0 }))}
+        >
+          −
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
   const readyPlaces = peekPlaces();
   const readyDetail = peekDetail();
@@ -101,12 +245,16 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
   const [patch, setPatch] = useState(readyPlaces?.patch ?? "");
   const [vendors, setVendors] = useState<AtlasVendor[]>(readyDetail?.vendors ?? []);
   const [hunts, setHunts] = useState<AtlasHunt[]>(readyDetail?.hunts ?? []);
+  const [duties, setDuties] = useState<DutyDrop[]>([]);
+  const [nodes, setNodes] = useState<NodeDrop[]>([]);
+  const [plans, setPlans] = useState<FightPlan[]>([]);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<AtlasKind | "all">("zone");
   const [query, setQuery] = useState("");
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [vendorKey, setVendorKey] = useState<string | null>(null);
-  const [panel, setPanel] = useState<"hunts" | "vendors">("hunts");
+  const [spot, setSpot] = useState<number | null>(null);
+  const [panel, setPanel] = useState<"hunts" | "vendors" | "drops" | "plan">("hunts");
   const [huntKind, setHuntKind] = useState<"all" | "job" | "gc">("all");
   const [brokenMap, setBrokenMap] = useState(false);
 
@@ -131,6 +279,18 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
         if (cancel) return;
         setVendors(file.vendors);
         setHunts(file.hunts);
+      })
+      .catch(() => {});
+    void loadDrops()
+      .then((file) => {
+        if (cancel) return;
+        setDuties(file.duties);
+        setNodes(file.nodes);
+      })
+      .catch(() => {});
+    void loadPlans()
+      .then((file) => {
+        if (!cancel) setPlans(file);
       })
       .catch(() => {});
     return () => {
@@ -217,11 +377,34 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
       }));
   }, [visible]);
   const vendor = here.find((v, i) => `${v.id}-${i}` === vendorKey) ?? null;
+  const duty = useMemo(() => {
+    if (!place) return null;
+    const key = normName(place.name);
+    return duties.find((item) => normName(item.n) === key) ?? null;
+  }, [duties, place]);
+  const difficulties = useMemo(() => {
+    if (!duty) return [];
+    return duties
+      .filter((item) => item.g === duty.g)
+      .sort((a, b) => DIFF_ORDER.indexOf(a.d) - DIFF_ORDER.indexOf(b.d) || a.lv - b.lv);
+  }, [duties, duty]);
+  const zoneNodes = useMemo(
+    () => (place ? nodes.filter((node) => node.z === place.name) : []),
+    [nodes, place],
+  );
+  const plan = useMemo(() => {
+    if (!place) return null;
+    const key = normName(place.name);
+    return plans.find((item) => normName(item.n) === key) ?? null;
+  }, [plans, place]);
 
   useEffect(() => {
     setBrokenMap(false);
     setVendorKey(null);
-  }, [place?.id]);
+    setSpot(null);
+    if (place && /\((Savage|Ultimate|Chaotic)\)/.test(place.name)) setPanel("plan");
+    else if (place && (place.kind === "dungeon" || place.kind === "trial" || place.kind === "raid")) setPanel("drops");
+  }, [place]);
 
   if (error && places.length === 0) return <p className="mt-8 text-sm text-muted">{error}</p>;
   if (places.length === 0) return <p className="mt-8 text-sm text-muted">Loading maps…</p>;
@@ -312,46 +495,83 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
           </div>
 
           <div className="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)]">
-          <div className="relative aspect-square overflow-hidden rounded-md bg-[#07080c] shadow-[var(--shadow-border)]">
-            {brokenMap || !mapSrc(place.map) ? (
-              <div className="flex h-full items-center justify-center text-sm text-muted">
-                Map image unavailable
-              </div>
-            ) : (
-              <img
-                key={place.map}
-                src={mapSrc(place.map)}
-                alt=""
-                referrerPolicy="no-referrer"
-                decoding="async"
-                fetchPriority="high"
-                className="h-full w-full object-contain"
-                onError={() => setBrokenMap(true)}
-              />
-            )}
-            {here.map((v, i) => {
-              const key = `${v.id}-${i}`;
-              const on = vendorKey === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  title={`${v.name} (${v.x}, ${v.y})`}
-                  onClick={() => setVendorKey(key)}
-                  className={cn(
-                    "absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#0b0c10] bg-accent shadow",
-                    on && "z-10 size-4 ring-2 ring-fg",
-                  )}
-                  style={{ left: `${v.px}%`, top: `${v.py}%` }}
-                />
-              );
-            })}
-          </div>
+          {brokenMap || !mapSrc(place.map) ? (
+            <div className="flex aspect-square items-center justify-center rounded-md bg-[#07080c] text-sm text-muted shadow-[var(--shadow-border)]">
+              Map image unavailable
+            </div>
+          ) : (
+            <MapStage src={mapSrc(place.map)} onError={() => setBrokenMap(true)}>
+              {here.map((v, i) => {
+                const key = `${v.id}-${i}`;
+                const on = vendorKey === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    title={`${v.name} (${v.x}, ${v.y})`}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={() => {
+                      setVendorKey(key);
+                      setPanel("vendors");
+                    }}
+                    className={cn(
+                      "absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#0b0c10] bg-accent shadow",
+                      on && "z-10 size-4 ring-2 ring-fg",
+                    )}
+                    style={{ left: `${v.px}%`, top: `${v.py}%` }}
+                  />
+                );
+              })}
+              {duty?.coffers.map((coffer, index) => {
+                if (coffer.x == null || coffer.y == null) return null;
+                const left = gamePct(coffer.x, place.size);
+                const top = gamePct(coffer.y, place.size);
+                if (left == null || top == null) return null;
+                const on = spot === index;
+                return (
+                  <button
+                    key={`coffer-${index}`}
+                    type="button"
+                    title={`Coffer ${index + 1} (${coffer.x}, ${coffer.y})`}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={() => {
+                      setSpot(index);
+                      setPanel("drops");
+                    }}
+                    className={cn(
+                      "absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-[#0b0c10] bg-[#e0b15a] shadow",
+                      on && "z-10 size-4 ring-2 ring-fg",
+                    )}
+                    style={{ left: `${left}%`, top: `${top}%` }}
+                  />
+                );
+              })}
+              {zoneNodes.map((node, index) => {
+                const left = gamePct(node.x, place.size);
+                const top = gamePct(node.y, place.size);
+                if (left == null || top == null) return null;
+                return (
+                  <button
+                    key={`node-${node.n}-${index}`}
+                    type="button"
+                    title={`${node.n} · ${node.k} (${node.x}, ${node.y})`}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={() => setPanel("drops")}
+                    className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#0b0c10] bg-[#7dcea0] shadow"
+                    style={{ left: `${left}%`, top: `${top}%` }}
+                  />
+                );
+              })}
+            </MapStage>
+          )}
 
           <div className="min-w-0">
+          <p className="mb-2 text-xs text-subtle">Drag to move the map. Scroll or use the buttons to zoom.</p>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-md bg-bg p-0.5">
-              {(["hunts", "vendors"] as const).map((id) => (
+              {(["plan", "drops", "hunts", "vendors"] as const)
+                .filter((id) => id !== "plan" || plan)
+                .map((id) => (
                 <button
                   key={id}
                   type="button"
@@ -361,7 +581,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                     panel === id ? "bg-fg text-accent-fg" : "text-muted",
                   )}
                 >
-                  {id === "hunts" ? "Hunts" : "Vendors"}
+                  {id === "hunts" ? "Hunts" : id === "vendors" ? "Vendors" : id === "drops" ? "Drops" : "Plan"}
                 </button>
               ))}
             </div>
@@ -381,7 +601,132 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
               ))}
           </div>
 
-          {panel === "hunts" ? (
+          {panel === "plan" && plan ? (
+            <div className="mt-4 max-h-[28rem] space-y-3 overflow-y-auto">
+              <p className="text-sm text-fg">{plan.pf}</p>
+              <ol className="list-decimal space-y-2 pl-4 text-sm text-fg">
+                {plan.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              <div className="flex flex-wrap gap-2">
+                {plan.links.map((link) => (
+                  <a
+                    key={link.u}
+                    href={link.u}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-sm bg-surface-2 px-2.5 py-1 text-xs text-accent"
+                  >
+                    {link.s}
+                  </a>
+                ))}
+              </div>
+              <p className="text-xs text-subtle">
+                Party Finder notes, the wiki, and recent forum posts. Use one guide. Do not mix two plans in the same pull.
+              </p>
+            </div>
+          ) : panel === "drops" ? (
+            <div className="mt-4 max-h-[28rem] space-y-4 overflow-y-auto">
+              {difficulties.length > 1 && (
+                <div className="flex flex-wrap gap-1">
+                  {difficulties.map((item) => (
+                    <button
+                      key={item.n}
+                      type="button"
+                      onClick={() => {
+                        const next = places.find((candidate) => normName(candidate.name) === normName(item.n));
+                        if (next) setPlaceId(next.id);
+                      }}
+                      className={cn(
+                        "rounded-sm px-2.5 py-1 text-xs",
+                        duty?.n === item.n ? "bg-surface-2 text-fg shadow-[var(--shadow-border)]" : "text-muted",
+                      )}
+                    >
+                      {item.d}
+                      {item.lv > 0 ? ` · ${item.lv}` : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!duty && zoneNodes.length === 0 && (
+                <p className="text-sm text-muted">No recorded drops for this place.</p>
+              )}
+              {duty && (
+                <div className="space-y-4">
+                  <p className="text-xs text-subtle">
+                    {duty.d}
+                    {duty.lv > 0 ? ` · level ${duty.lv}` : ""}
+                    {duty.sy > 0 && duty.sy !== duty.lv ? ` · sync ${duty.sy}` : ""}
+                    {" · gold pins are coffers"}
+                  </p>
+                  {duty.coffers.map((coffer, index) => (
+                    <section key={`coffer-list-${index}`}>
+                      <button
+                        type="button"
+                        onClick={() => setSpot(index)}
+                        className={cn("text-left text-[0.65rem] uppercase tracking-[0.16em]", spot === index ? "text-fg" : "text-subtle")}
+                      >
+                        Coffer {index + 1}
+                        {coffer.x != null ? ` · ${coffer.x}, ${coffer.y}` : ""}
+                      </button>
+                      <ul className="mt-1 divide-y divide-border">
+                        {coffer.items.map((item) => (
+                          <li key={item} className="py-1.5 text-sm text-fg">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                  {duty.fights.map((fight, index) => (
+                    <section key={`fight-${index}`}>
+                      <h3 className="text-[0.65rem] uppercase tracking-[0.16em] text-subtle">{fight.t}</h3>
+                      <ul className="mt-1 divide-y divide-border">
+                        {fight.items.map((item) => (
+                          <li key={item} className="py-1.5 text-sm text-fg">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                  {duty.extra.length > 0 && (
+                    <section>
+                      <h3 className="text-[0.65rem] uppercase tracking-[0.16em] text-subtle">Also awarded</h3>
+                      <ul className="mt-1 divide-y divide-border">
+                        {duty.extra.map((item) => (
+                          <li key={item} className="py-1.5 text-sm text-fg">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                </div>
+              )}
+              {zoneNodes.length > 0 && (
+                <div className="space-y-4">
+                  <p className="text-xs text-subtle">Green pins are gathering nodes.</p>
+                  {zoneNodes.map((node, index) => (
+                    <section key={`${node.n}-${node.k}-${index}`}>
+                      <h3 className="text-[0.65rem] uppercase tracking-[0.16em] text-subtle">
+                        {node.k} · {node.n}
+                        {node.lv > 0 ? ` · Lv ${node.lv}` : ""} · {node.x}, {node.y}
+                      </h3>
+                      <ul className="mt-1 divide-y divide-border">
+                        {node.items.map((item) => (
+                          <li key={item} className="py-1.5 text-sm text-fg">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : panel === "hunts" ? (
             <div className="mt-4 max-h-[28rem] space-y-4 overflow-y-auto">
               {huntAreas.length === 0 && (
                 <p className="text-sm text-muted">No hunting-log mobs in this place.</p>

@@ -19,7 +19,12 @@ function appVersion(): string {
     "src/lib/progress.ts",
     "src/components/reliquary/app.tsx",
     "src/components/reliquary/atlas.tsx",
+    "src/components/reliquary/atlas-load.ts",
     "public/sw.js",
+    "public/drops.json",
+    "public/strategies.json",
+    "public/atlas-places.json",
+    "public/atlas-detail.json",
   ];
   const hash = createHash("sha256");
   for (const file of files) hash.update(readFileSync(join(process.cwd(), file)));

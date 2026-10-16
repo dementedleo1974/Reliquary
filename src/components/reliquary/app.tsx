@@ -764,6 +764,22 @@ function WeaponPanel({
               </Button>
             </div>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{stage.summary}</p>
+            {stage.phases && stage.phases.length > 0 && (
+              <ol className="mt-3 max-w-prose space-y-1.5">
+                {stage.phases.map((phase, phaseIndex) => (
+                  <li
+                    key={phase.name}
+                    className="flex items-baseline justify-between gap-3 rounded-md bg-surface-2 px-3 py-2"
+                  >
+                    <span className="text-sm text-fg">
+                      <span className="mr-2 text-xs tabular text-subtle">{phaseIndex + 1}</span>
+                      {phase.name}
+                    </span>
+                    <span className="shrink-0 text-sm tabular text-accent">{phase.rate}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
             {start && idx === 0 && (
               <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-fg">
                 <span className="block">{start.relic}</span>
