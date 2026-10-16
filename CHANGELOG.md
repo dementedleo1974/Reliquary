@@ -12,6 +12,8 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 - Gear now shows the tomestone table's item level range, not only the top number. Skills also lists the shared role actions from the game files.
 
+- The relic page uses the gear set, the combo order, and the timer for the job you already have open. The three tabs stay the full lists.
+
 ### Time, gear, and skills
 
 - Time is a timer for each combat job and Beastmaster. A duration is stored only for a run that was started here.

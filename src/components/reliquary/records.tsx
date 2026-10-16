@@ -65,15 +65,47 @@ function formatDuration(ms: number) {
   return `${seconds}s`;
 }
 
-export function TimeView() {
+const ACTIVE_KEY = "reliquary-time-active";
+const TIME_EVENT = "reliquary-time";
+
+function readActive(): { job: string; start: number } | null {
+  try {
+    const raw = sessionStorage.getItem(ACTIVE_KEY);
+    if (!raw || raw.length > 200) return null;
+    const data = JSON.parse(raw) as { job?: unknown; start?: unknown };
+    if (typeof data.job !== "string" || !knownJob(data.job) || typeof data.start !== "number") return null;
+    if (!Number.isFinite(data.start) || data.start > Date.now() || Date.now() - data.start > MAX_MS) return null;
+    return { job: data.job, start: data.start };
+  } catch {
+    return null;
+  }
+}
+
+function writeActive(active: { job: string; start: number } | null) {
+  try {
+    if (active) sessionStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
+    else sessionStorage.removeItem(ACTIVE_KEY);
+  } catch {
+    /* the clock still shows for this view */
+  }
+  window.dispatchEvent(new Event(TIME_EVENT));
+}
+
+function useClock() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [active, setActive] = useState<{ job: string; start: number } | null>(null);
   const [now, setNow] = useState(0);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setRuns(readRuns());
+    const pull = () => {
+      setRuns(readRuns());
+      setActive(readActive());
+    };
+    pull();
     setReady(true);
+    window.addEventListener(TIME_EVENT, pull);
+    return () => window.removeEventListener(TIME_EVENT, pull);
   }, []);
 
   useEffect(() => {
@@ -82,29 +114,34 @@ export function TimeView() {
     return () => window.clearInterval(timer);
   }, [active]);
 
+  function start(job: string) {
+    if (readActive() || !knownJob(job)) return;
+    const startAt = Date.now();
+    setNow(startAt);
+    writeActive({ job, start: startAt });
+  }
+
+  function stop() {
+    const current = readActive();
+    if (!current) return;
+    const end = Date.now();
+    if (end - current.start > 1000 && end - current.start <= MAX_MS) {
+      writeRuns([{ job: current.job, start: current.start, end }, ...readRuns()].slice(0, MAX_RUNS));
+    }
+    writeActive(null);
+  }
+
+  return { runs, active, now, ready, start, stop };
+}
+
+export function TimeView() {
+  const { runs, active, now, ready, start, stop } = useClock();
+
   const totals = useMemo(() => {
     const map = new Map<string, number>();
     for (const run of runs) map.set(run.job, (map.get(run.job) ?? 0) + (run.end - run.start));
     return map;
   }, [runs]);
-
-  function start(job: string) {
-    if (active) return;
-    const startAt = Date.now();
-    setActive({ job, start: startAt });
-    setNow(startAt);
-  }
-
-  function stop() {
-    if (!active) return;
-    const end = Date.now();
-    if (end - active.start > 1000 && end - active.start <= MAX_MS) {
-      const next = [{ job: active.job, start: active.start, end }, ...runs].slice(0, MAX_RUNS);
-      setRuns(next);
-      writeRuns(next);
-    }
-    setActive(null);
-  }
 
   return (
     <section className="mt-6 min-w-0">
@@ -145,6 +182,61 @@ export function TimeView() {
         })}
       </ul>
     </section>
+  );
+}
+
+export function JobSheet({ jobId, expansion }: { jobId: string; expansion: string }) {
+  const { runs, active, now, ready, start, stop } = useClock();
+  const gear = GEAR_LADDER.filter((step) => step.expansion === expansion);
+  const combo = chains(JOB_ACTIONS[jobId] ?? []).slice(0, 3);
+  const total = runs.filter((run) => run.job === jobId).reduce((sum, run) => sum + (run.end - run.start), 0);
+  const running = active?.job === jobId;
+
+  return (
+    <div className="mt-8 grid gap-3 border-t border-border pt-6 sm:grid-cols-3">
+      <div>
+        <p className="text-xs uppercase tracking-[0.14em] text-subtle">Gear for this expansion</p>
+        <ul className="mt-2 space-y-2">
+          {gear.map((step) => (
+            <li key={step.itemLevel} className="text-sm text-fg">
+              {step.set}
+              <span className="block text-xs text-muted">Item level {step.itemLevel}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-[0.14em] text-subtle">Combo order</p>
+        <ul className="mt-2 space-y-2">
+          {combo.map((line) => (
+            <li key={line.join(">")} className="text-sm text-fg">
+              {line.join(" → ")}
+            </li>
+          ))}
+          {combo.length === 0 && <li className="text-sm text-muted">No combo is stored for this job.</li>}
+        </ul>
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-[0.14em] text-subtle">Your time</p>
+        <p className="mt-2 tabular text-sm text-fg">
+          {running && active ? formatDuration(now - active.start) : ready && total > 0 ? formatDuration(total) : "No run"}
+        </p>
+        {running ? (
+          <button type="button" onClick={stop} className="mt-2 h-8 rounded-full bg-fg px-3 text-xs text-accent-fg">
+            Stop
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={active !== null}
+            onClick={() => start(jobId)}
+            className="mt-2 h-8 rounded-full bg-surface-2 px-3 text-xs text-fg disabled:text-subtle"
+          >
+            Start
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

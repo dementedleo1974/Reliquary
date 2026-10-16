@@ -55,6 +55,7 @@ const BeastView = lazy(() => import("./beasts").then((mod) => ({ default: mod.Be
 const TimeView = lazy(() => import("./records").then((mod) => ({ default: mod.TimeView })));
 const GearView = lazy(() => import("./records").then((mod) => ({ default: mod.GearView })));
 const SkillsView = lazy(() => import("./records").then((mod) => ({ default: mod.SkillsView })));
+const JobSheet = lazy(() => import("./records").then((mod) => ({ default: mod.JobSheet })));
 
 type AppView = "tracker" | "list" | "board" | "atlas" | "beasts" | "time" | "gear" | "skills";
 
@@ -940,6 +941,9 @@ function WeaponPanel({
         </div>
       )}
 
+      <Suspense fallback={null}>
+        <JobSheet jobId={job.id} expansion={line.expansion} />
+      </Suspense>
       <UnlockBlock line={line} />
     </section>
   );
