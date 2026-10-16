@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BEAST_STEPS, BEASTS, type Beast } from "@/lib/beasts";
+import { BEAST_STEPS, BEASTS, HORN_PLAN, NAMED_SWAPS, type Beast } from "@/lib/beasts";
 import { cn } from "@/lib/utils";
 
 const KEY = "reliquary-beasts-v1";
@@ -77,6 +77,23 @@ export function BeastView() {
             <li key={step}>{step}</li>
           ))}
         </ol>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {HORN_PLAN.map((horn) => (
+            <div key={horn.horn} className="rounded-lg bg-bg p-3">
+              <p className="text-sm text-fg">
+                {horn.horn}
+                <span className="text-muted"> · {horn.kin}</span>
+              </p>
+              <p className="mt-1 text-xs text-accent">{horn.button}</p>
+              <p className="mt-2 text-sm text-muted">{horn.why}</p>
+            </div>
+          ))}
+        </div>
+        <ul className="mt-4 space-y-1 text-sm text-muted">
+          {NAMED_SWAPS.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1">

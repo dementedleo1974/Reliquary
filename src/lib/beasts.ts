@@ -64,10 +64,39 @@ export const BEASTS: Beast[] = [
   { n: 50, name: "Behemoth", kin: "Beastkin", level: 50, mob: "Behemoth", place: "The Labyrinth of the Ancients", at: "Alliance raid", how: "Have the raid stop around 5% so every Beastmaster can Capture. One kill can fill the alliance. Gourd if you miss it.", skills: ["Thunderbolt", "Meteor", "Beastskin"] },
 ];
 
+export const HORN_PLAN = [
+  {
+    horn: "Ranged",
+    kin: "Wavekin",
+    button: "Quelling Wave",
+    why: "A ranged water hit. It also strips one buff from the target. Pugil covers this early. Megalocrab, then Gigantoad or Karlabos, later.",
+  },
+  {
+    horn: "Interrupt",
+    kin: "Soulkin",
+    button: "Soul Crush",
+    why: "Interrupts a cast. Any Soulkin works. Coblyn is the early catch. Spriggan and Ice Golem are the ones the Crucible boards call for.",
+  },
+  {
+    horn: "Packs",
+    kin: "Beastkin",
+    button: "Beastskin",
+    why: "Cuts physical damage taken and raises critical rate. Chimera freezes a pack with The Ram's Voice. Buffalo stuns with Heave. Cu Sith holds the horn until then.",
+  },
+];
+
+export const NAMED_SWAPS = [
+  "Treant: Acorn Bomb is a Nightmare you can keep casting while the beast is out. It is a Trick, not the one Borrow.",
+  "Coeurl: Blaster is a paralysis and a damage cut.",
+  "Bat: Blood Drain is the heal.",
+  "Geshunpest: Scouring Ash removes one harmful effect.",
+  "Wespe, Mantis, and Damselfly: a burn set for a boss that dies before you need an interrupt. It is not the set for every fight.",
+];
+
 export const BEAST_STEPS = [
   "Unlock at the Excited Adventurer in New Gridania (11.8, 13.6), quest Strangers in the Wood. You need Dawntrail, one combat job at 50, and the quest The Ultimate Weapon. Cu Sith is handed to you.",
   "Beastmaster stops at 50. The catch checks the enemy you are hitting, so a lower spawn of that beast is valid. Expansion field monsters are above the cap and will not tame.",
   "Raise the job, then catch in level order. Weaken the target under 10% (under 5% if it is sturdy) and use Capture. It is your own mark. A whole party can catch the same enemy.",
-  "Three battlehorns. One beast is out at a time, and you swap among the three. Pick a kin for the actions you need, not a single famous name.",
+  "Call a beast before the pull. Each summon lets you use Tempered Release or Borrow once, not both. Parting Blow is the exit, not a filler.",
   "Duty beasts are also gourds. The Crucible vendor's stock grows after the second board of the Crucible of the Unbroken.",
 ];

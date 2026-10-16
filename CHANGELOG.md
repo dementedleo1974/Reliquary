@@ -4,6 +4,8 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 ## 2026-10-16
 
+- The Beasts tab now shows a three-horn plan. Kinship is shared by family. Named swaps are the ones the duty guides call out.
+
 ### Beta
 
 - The app is marked Beta in the title and the header. The data can still change as patch notes settle.
