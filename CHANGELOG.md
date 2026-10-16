@@ -7,6 +7,7 @@ A supplement to the commit history. Dates are when the change landed in this rep
 ### Repository
 
 - The app links to https://github.com/dementedleo1974/Reliquary.
+- Pushes to main build the app and keep the result on that run.
 
 ### Save code
 

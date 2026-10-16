@@ -2,3 +2,6 @@ This is a beta phased app. I'm trying to make it something like Atlas from other
 
 Source: https://github.com/dementedleo1974/Reliquary
 
+Every push to main builds itself. The built app is attached to that run.
+
+
