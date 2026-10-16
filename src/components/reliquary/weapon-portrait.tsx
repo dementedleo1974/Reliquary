@@ -1,4 +1,5 @@
 import type { JobId, LineId, WeaponKind } from "@/lib/relics";
+import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { LINE_GLOW } from "./line-glow";
@@ -31,8 +32,8 @@ export function WeaponPortrait({
   const glow = LINE_GLOW[lineId];
   const dim = size === "sm" ? "size-16" : size === "md" ? "size-28" : "size-64 max-w-full sm:size-72";
   const live = size !== "sm";
-  const icon = `/icons/relics/${lineId}/${jobId}/${stageIndex}.png`;
-  const painted = `/weapons/${lineId}/${kind}.jpg`;
+  const icon = publicPath(`/icons/relics/${lineId}/${jobId}/${stageIndex}.png`);
+  const painted = publicPath(`/weapons/${lineId}/${kind}.jpg`);
   const [src, setSrc] = useState(icon);
   const [gameIcon, setGameIcon] = useState(true);
   useEffect(() => {

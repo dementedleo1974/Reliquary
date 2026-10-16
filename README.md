@@ -2,6 +2,12 @@
 
 A free Final Fantasy XIV companion for relic weapons. Track each job, the materials still outstanding, Market Board prices, and where to go on the map. Progress stays on the device.
 
+## Open it
+
+[dementedleo1974.github.io/Reliquary](https://dementedleo1974.github.io/Reliquary/)
+
+Open that page, then use the browser's install button or Add to Home Screen. Progress stays in the browser. The Market tab needs the server build, so prices are empty on this copy.
+
 ## Source
 
 https://github.com/dementedleo1974/Reliquary

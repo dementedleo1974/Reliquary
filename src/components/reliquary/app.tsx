@@ -43,6 +43,7 @@ import {
   type RelicLine,
   type RelicStage,
 } from "@/lib/relics";
+import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import { BoardView, MarketProvider } from "@/lib/market-board";
 import { useLivePatch } from "@/lib/use-live-patch";
@@ -88,7 +89,7 @@ export function ReliquaryApp() {
 
   useEffect(() => {
     if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
-    void navigator.serviceWorker.register("/sw.js");
+    void navigator.serviceWorker.register(publicPath("/sw.js"));
   }, []);
 
   const slice: ProgressSlice = { weapons, shared };
@@ -204,7 +205,7 @@ function UpdateButton({ livePatch }: { livePatch: string }) {
         await registration?.update();
         registration?.waiting?.postMessage("skip-waiting");
       }
-      const response = await fetch("/version.json", { cache: "no-store" });
+      const response = await fetch(publicPath("/version.json"), { cache: "no-store" });
       if (!response.ok) return "same" as const;
       const data = (await response.json()) as { version?: unknown };
       const version = data.version;
@@ -314,6 +315,14 @@ function Header({
             className="mt-1 block max-w-full truncate text-xs text-subtle hover:text-accent"
           >
             github.com/dementedleo1974/Reliquary
+          </a>
+          <a
+            href="https://dementedleo1974.github.io/Reliquary/"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-0.5 block max-w-full truncate text-xs text-accent hover:text-fg"
+          >
+            Open or install
           </a>
         </div>
         <div className="flex items-center gap-2">
@@ -453,7 +462,7 @@ function useAndroidInstall(): AndroidInstall {
     const ios =
       /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     if (ios) {
-      window.location.assign("/?install=1&platform=ios");
+      window.location.assign(`${publicPath("/")}?install=1&platform=ios`);
       return;
     }
     if (/Android/i.test(ua)) {
@@ -481,7 +490,7 @@ function AndroidInstallBar({ install }: { install: AndroidInstall }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex max-w-6xl items-center gap-3">
-        <img src="/icons/icon-192.png" alt="" className="size-10 rounded-md shadow-[var(--shadow-border)]" />
+        <img src={publicPath("/icons/icon-192.png")} alt="" className="size-10 rounded-md shadow-[var(--shadow-border)]" />
         <div className="min-w-0 flex-1">
           <p className="text-sm text-fg">Install on Android</p>
           <p className="truncate text-xs text-muted">

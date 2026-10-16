@@ -190,10 +190,14 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+const pagesBase = process.env.RELIQUARY_BASE ?? "";
+const base = pagesBase && pagesBase !== "/" ? (pagesBase.endsWith("/") ? pagesBase : `${pagesBase}/`) : "/";
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
 export default defineConfig(({ command, isPreview }) => ({
+  base,
   server: {
     host: "0.0.0.0",
     port: 8080,
@@ -215,7 +219,15 @@ export default defineConfig(({ command, isPreview }) => ({
     grokPwaPlugin(),
     reliquaryVersionPlugin(),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      pages: [{ path: "/", prerender: { enabled: true, crawlLinks: false } }],
+      ...(base === "/"
+        ? {}
+        : {
+            client: { base },
+            router: { basepath: base.slice(0, -1) },
+          }),
+    }),
     ...(command === "build" || isPreview
       ? [
           nitro({

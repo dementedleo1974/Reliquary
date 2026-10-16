@@ -1,4 +1,17 @@
-const CACHE = "reliquary-v8";
+const CACHE = "reliquary-v9";
+
+function scopePath() {
+  const path = new URL(self.registration.scope).pathname;
+  return path.endsWith("/") ? path : `${path}/`;
+}
+
+function appPath(pathname) {
+  const scope = scopePath();
+  if (scope === "/") return pathname;
+  if (pathname === scope || pathname === scope.slice(0, -1)) return "/";
+  if (pathname.startsWith(scope)) return `/${pathname.slice(scope.length)}`;
+  return pathname;
+}
 
 function mapPath(path) {
   return /^\/maps\/[a-z0-9]{1,12}\/\d{2}\.jpg$/.test(path);
@@ -10,7 +23,7 @@ function atlasPath(url) {
 
 function cacheable(url) {
   if (url.origin !== self.location.origin) return false;
-  const path = url.pathname;
+  const path = appPath(url.pathname);
   if (path.includes("..") || path.startsWith("/api/") || path.startsWith("/__gate")) return false;
   return (
     path === "/" ||
@@ -33,7 +46,13 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(["/", "/manifest.webmanifest", "/favicon.svg"]))
+      .then((cache) =>
+        cache.addAll([
+          new URL("./", self.registration.scope),
+          new URL("manifest.webmanifest", self.registration.scope),
+          new URL("favicon.svg", self.registration.scope),
+        ]),
+      )
       .then(() => self.skipWaiting()),
   );
 });
@@ -81,16 +100,16 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname === "/version.json") {
+  if (appPath(url.pathname) === "/version.json") {
     event.respondWith(fetch(request, { cache: "no-store" }));
     return;
   }
   if (!cacheable(url)) return;
-  if (mapPath(url.pathname)) {
+  if (mapPath(appPath(url.pathname))) {
     event.respondWith(cachedMap(request));
     return;
   }
-  if (atlasPath(url)) {
+  if (atlasPath(new URL(appPath(url.pathname), url.origin))) {
     event.respondWith(staleAtlas(request));
     return;
   }
@@ -107,7 +126,7 @@ self.addEventListener("fetch", (event) => {
         const hit = await caches.match(request);
         if (hit) return hit;
         if (request.mode === "navigate") {
-          const shell = await caches.match("/");
+          const shell = await caches.match(new URL("./", self.registration.scope));
           if (shell) return shell;
         }
         return new Response("Offline", { status: 503, statusText: "Offline" });

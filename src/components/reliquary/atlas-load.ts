@@ -1,4 +1,5 @@
 import type { AtlasHunt, AtlasPlace, AtlasVendor } from "./atlas";
+import { publicPath } from "@/lib/public-path";
 
 const PLACES_KEY = "reliquary-places";
 const MAP_ID = /^[a-z0-9]+\/\d{2}$/;
@@ -58,7 +59,7 @@ let dropsPromise: Promise<DropsFile> | null = null;
 export function mapSrc(map: string) {
   if (!MAP_ID.test(map)) return "";
   const [territory, index] = map.split("/");
-  return `/maps/${territory}/${index}.jpg`;
+  return publicPath(`/maps/${territory}/${index}.jpg`);
 }
 
 export function peekPlaces(): PlacesFile | null {
@@ -97,7 +98,7 @@ export function rememberedPlaces(): PlacesFile | null {
 
 export function loadPlaces(): Promise<PlacesFile> {
   if (placesCache) return Promise.resolve(placesCache);
-  placesPromise ??= readJson("/atlas-places.json", 400_000)
+  placesPromise ??= readJson(publicPath("/atlas-places.json"), 400_000)
     .then((json) => {
       const places = asPlaces(json);
       if (!places) throw new Error("missing");
@@ -117,7 +118,7 @@ export function loadPlaces(): Promise<PlacesFile> {
 
 export function loadDetail(): Promise<DetailFile> {
   if (detailCache) return Promise.resolve(detailCache);
-  detailPromise ??= readJson("/atlas-detail.json", 1_200_000)
+  detailPromise ??= readJson(publicPath("/atlas-detail.json"), 1_200_000)
     .then((json) => {
       const vendors = (json as { vendors?: unknown }).vendors;
       const hunts = (json as { hunts?: unknown }).hunts;
@@ -137,7 +138,7 @@ export function loadDetail(): Promise<DetailFile> {
 
 export function loadDrops(): Promise<DropsFile> {
   if (dropsCache) return Promise.resolve(dropsCache);
-  dropsPromise ??= readJson("/drops.json", 2_500_000)
+  dropsPromise ??= readJson(publicPath("/drops.json"), 2_500_000)
     .then((json) => {
       const duties = (json as { duties?: unknown }).duties;
       const nodes = (json as { nodes?: unknown }).nodes;
@@ -155,7 +156,7 @@ export function loadDrops(): Promise<DropsFile> {
 
 export function loadPlans(): Promise<FightPlan[]> {
   if (plansCache) return Promise.resolve(plansCache);
-  plansPromise ??= readJson("/strategies.json", 800_000)
+  plansPromise ??= readJson(publicPath("/strategies.json"), 800_000)
     .then((json) => {
       const plans = (json as { plans?: unknown }).plans;
       if (!Array.isArray(plans) || plans.length > 400) throw new Error("missing");

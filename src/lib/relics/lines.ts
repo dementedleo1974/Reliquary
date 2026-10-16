@@ -1,3 +1,4 @@
+import { publicPath } from "@/lib/public-path";
 import type { RelicLine } from "./types";
 
 export const RELIC_LINES: RelicLine[] = [
@@ -9,7 +10,7 @@ export const RELIC_LINES: RelicLine[] = [
     name: "Zodiac Weapons",
     short: "Zodiac",
     smith: "Gerolt & Jalzahn — Hyrstmill, North Shroud",
-    art: "/expansions/arr.jpg",
+    art: publicPath("/expansions/arr.jpg"),
     unlock: [
       "Level 50 Disciple of War or Magic",
       "Complete ARR main scenario (The Ultimate Weapon)",
@@ -379,7 +380,7 @@ export const RELIC_LINES: RelicLine[] = [
     name: "Anima Weapons",
     short: "Anima",
     smith: "Gerolt & Ardashir — Azys Lla, Helix",
-    art: "/expansions/hw.jpg",
+    art: publicPath("/expansions/hw.jpg"),
     unlock: [
       "Level 60 Disciple of War or Magic",
       "Complete Heavensward MSQ through Heavensward",
@@ -678,7 +679,7 @@ export const RELIC_LINES: RelicLine[] = [
     name: "Eurekan Weapons",
     short: "Eureka",
     smith: "Gerolt — The Forbidden Land, Eureka",
-    art: "/expansions/sb.jpg",
+    art: publicPath("/expansions/sb.jpg"),
     unlock: [
       "Level 70 Disciple of War or Magic",
       "Complete Stormblood MSQ",
@@ -869,7 +870,7 @@ export const RELIC_LINES: RelicLine[] = [
     name: "Resistance Weapons",
     short: "Resistance",
     smith: "Gerolt & Zlatan — Gangos",
-    art: "/expansions/shb.jpg",
+    art: publicPath("/expansions/shb.jpg"),
     unlock: [
       "Level 80 Disciple of War or Magic",
       "Complete Shadowbringers MSQ",
@@ -1069,7 +1070,7 @@ export const RELIC_LINES: RelicLine[] = [
     name: "Manderville Weapons",
     short: "Manderville",
     smith: "Gerolt & Godbert Manderville — Radz-at-Han",
-    art: "/expansions/ew.jpg",
+    art: publicPath("/expansions/ew.jpg"),
     unlock: [
       "Level 90 Disciple of War or Magic",
       "Complete Endwalker MSQ",
@@ -1195,7 +1196,7 @@ export const RELIC_LINES: RelicLine[] = [
     name: "Phantom Weapons",
     short: "Phantom",
     smith: "Gerolt, Lydirceil & Dodokkuli — Phantom Village",
-    art: "/expansions/dt.jpg",
+    art: publicPath("/expansions/dt.jpg"),
     unlock: [
       "Level 100 Disciple of War or Magic",
       "Complete Dawntrail MSQ",
