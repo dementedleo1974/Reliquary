@@ -5,6 +5,7 @@
     "type": "git",
     "url": "https://github.com/dementedleo1974/Reliquary.git"
   },
+  "homepage": "https://github.com/dementedleo1974/Reliquary",
   "sideEffects": false,
   "type": "module",
   "overrides": {

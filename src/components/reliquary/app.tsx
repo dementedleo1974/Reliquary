@@ -278,9 +278,9 @@ function Header({
             href="https://github.com/dementedleo1974/Reliquary"
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-block text-xs text-subtle hover:text-accent"
+            className="mt-1 block max-w-full truncate text-xs text-subtle hover:text-accent"
           >
-            Source
+            github.com/dementedleo1974/Reliquary
           </a>
         </div>
         <div className="flex items-center gap-2">

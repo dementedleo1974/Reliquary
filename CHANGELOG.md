@@ -6,7 +6,7 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 ### Repository
 
-- The header links to the source repository.
+- The app address is https://github.com/dementedleo1974/Reliquary.
 - Pushes to main build the app. The result is kept on that run.
 
 ### Weapon pictures
