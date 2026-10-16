@@ -12,7 +12,7 @@ Open that page, then use the browser's install button or Add to Home Screen. Pro
 
 https://github.com/dementedleo1974/Reliquary
 
-Pushes to `main` build the app. The result is attached to that Actions run.
+Pushes to `main` run `npm run build:pages`. That is the browser copy. The result is attached to the Build run, and the Pages run publishes it once GitHub Pages is set to GitHub Actions.
 
 ## What it covers
 

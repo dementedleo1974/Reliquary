@@ -14,6 +14,8 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 - The relic page uses the gear set, the combo order, and the timer for the job you already have open. The three tabs stay the full lists.
 
+- The current build command is `npm run build:pages`. Both workflows use it, and the artifact is the static site.
+
 ### Browser copy
 
 - GitHub Pages publishes a clickable copy at dementedleo1974.github.io/Reliquary. The manifest can be installed from that address. Market prices stay on the server build.

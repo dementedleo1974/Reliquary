@@ -26,13 +26,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm install
-      - run: npm run build
-        env:
-          RELIQUARY_BASE: /Reliquary/
-      - run: |
-          test -f .vercel/output/static/index.html
-          cp .vercel/output/static/index.html .vercel/output/static/404.html
-          touch .vercel/output/static/.nojekyll
+      - run: npm run build:pages
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .vercel/output/static
