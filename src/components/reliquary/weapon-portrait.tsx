@@ -106,6 +106,7 @@ export function StageStrip({
         <button
           key={names[i] ?? i}
           type="button"
+          aria-label={`Step ${i + 1}: ${names[i] ?? ""}`}
           onClick={() => onSelect(i)}
           className={cn(
             "flex w-24 shrink-0 snap-start flex-col items-center gap-1 rounded-md p-2 transition-[box-shadow,background-color] duration-150",

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { JOBS, jobsForLine, RELIC_LINES } from "@/lib/relics";
 import type { JobId, LineId, RelicItem, RelicLine } from "@/lib/relics";
 
@@ -23,8 +23,6 @@ interface ProgressState extends ProgressSlice {
   selectJob: (id: JobId) => void;
   toggleStage: (line: LineId, job: JobId, stageId: string, stageIds: string[]) => void;
   setCount: (line: LineId, job: JobId, item: RelicItem, value: number) => void;
-  resetWeapon: (line: LineId, job: JobId) => void;
-  resetAll: () => void;
   setHydrated: () => void;
 }
 
@@ -35,6 +33,32 @@ function emptyWeapon(): WeaponProgress {
 function keyOf(line: LineId, job: JobId): WeaponKey {
   return `${line}:${job}`;
 }
+
+/** Writes stay closed until the saved progress has been read, and a save is never deleted. */
+let progressWritesOpen = false;
+
+const progressStorage = {
+  getItem: (name: string) => {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name: string, value: string) => {
+    if (!progressWritesOpen) return;
+    try {
+      const previous = localStorage.getItem(name);
+      if (previous && previous !== value) localStorage.setItem(`${name}-previous`, previous);
+      localStorage.setItem(name, value);
+    } catch {
+      /* the last good copy stays in place */
+    }
+  },
+  removeItem: (_name: string) => {
+    /* a save is not removed, even if storage asks */
+  },
+};
 
 export const useProgress = create<ProgressState>()(
   persist(
@@ -89,16 +113,11 @@ export const useProgress = create<ProgressState>()(
           },
         });
       },
-      resetWeapon: (line, job) => {
-        const weapons = { ...get().weapons };
-        delete weapons[keyOf(line, job)];
-        set({ weapons });
-      },
-      resetAll: () => set({ shared: {}, weapons: {} }),
     }),
     {
       name: "reliquary-progress-v1",
       skipHydration: true,
+      storage: createJSONStorage(() => progressStorage),
       partialize: (s) => ({
         selectedLine: s.selectedLine,
         selectedJob: s.selectedJob,
@@ -106,6 +125,9 @@ export const useProgress = create<ProgressState>()(
         weapons: s.weapons,
       }),
       merge: (persisted, current) => ({ ...current, ...sanitizeProgressState(persisted) }),
+      onRehydrateStorage: () => (_state, error) => {
+        if (!error) progressWritesOpen = true;
+      },
     },
   ),
 );
@@ -239,24 +261,54 @@ export function saveBody(state: Pick<SaveData, "selectedLine" | "selectedJob" | 
   });
 }
 
-/** A portable save. It is the same data as the file, with no account. */
+const SAVE_CODECS = [
+  { format: "brotli", prefix: "RQB." },
+  { format: "deflate-raw", prefix: "RQ1." },
+] as const;
+
+async function compressBytes(format: (typeof SAVE_CODECS)[number]["format"], bytes: Uint8Array): Promise<Uint8Array> {
+  const copy = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(copy).set(bytes);
+  const stream = new Blob([copy]).stream().pipeThrough(new CompressionStream(format as unknown as CompressionFormat));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function decompressBytes(format: (typeof SAVE_CODECS)[number]["format"], bytes: Uint8Array): Promise<string> {
+  const copy = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(copy).set(bytes);
+  const stream = new Blob([copy]).stream().pipeThrough(new DecompressionStream(format as unknown as CompressionFormat));
+  const text = await new Response(stream).text();
+  if (text.length > MAX_SAVE_CHARS) throw new Error("That file is too large.");
+  return text;
+}
+
+/** A portable save. The smaller lossless codec is kept, and the text comes back unchanged. */
 export async function encodeSaveCode(raw: string): Promise<string> {
   if (raw.length > MAX_SAVE_CHARS) throw new Error("That file is too large.");
-  const stream = new Blob([new TextEncoder().encode(raw)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
-  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
-  return `RQ1.${bytesToBase64Url(bytes)}`;
+  const bytes = new TextEncoder().encode(raw);
+  let best: { prefix: string; data: Uint8Array } | null = null;
+  for (const codec of SAVE_CODECS) {
+    try {
+      const data = await compressBytes(codec.format, bytes);
+      if (!best || data.length < best.data.length) best = { prefix: codec.prefix, data };
+    } catch {
+      /* this browser does not offer that codec */
+    }
+  }
+  if (!best) throw new Error("Could not compress the save.");
+  return `${best.prefix}${bytesToBase64Url(best.data)}`;
 }
 
 export async function decodeSaveCode(code: string): Promise<string> {
   const trimmed = code.trim();
-  if (!trimmed.startsWith("RQ1.")) throw new Error("That is not a Reliquary save code.");
-  const bytes = base64UrlToBytes(trimmed.slice(4));
-  const copy = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(copy).set(bytes);
-  const stream = new Blob([copy]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  const text = await new Response(stream).text();
-  if (text.length > MAX_SAVE_CHARS) throw new Error("That file is too large.");
-  return text;
+  const codec = SAVE_CODECS.find((item) => trimmed.startsWith(item.prefix));
+  if (!codec) throw new Error("That is not a Reliquary save code.");
+  try {
+    return await decompressBytes(codec.format, base64UrlToBytes(trimmed.slice(codec.prefix.length)));
+  } catch (error) {
+    if (error instanceof Error && error.message === "That file is too large.") throw error;
+    throw new Error("That is not a Reliquary save code.");
+  }
 }
 
 export function downloadProgressFile() {
@@ -273,8 +325,40 @@ export function downloadProgressFile() {
   URL.revokeObjectURL(url);
 }
 
+export function mergeProgress(current: SaveData, incoming: SaveData): SaveData {
+  const shared = { ...current.shared };
+  for (const [key, value] of Object.entries(incoming.shared)) {
+    shared[key] = Math.max(shared[key] ?? 0, value);
+  }
+  const weapons: Record<string, WeaponProgress> = { ...current.weapons };
+  for (const [key, weapon] of Object.entries(incoming.weapons)) {
+    const previous = weapons[key];
+    if (!previous) {
+      weapons[key] = { completed: [...weapon.completed], counts: { ...weapon.counts } };
+      continue;
+    }
+    const completed = [...previous.completed];
+    for (const id of weapon.completed) {
+      if (!completed.includes(id)) completed.push(id);
+    }
+    const counts = { ...previous.counts };
+    for (const [id, value] of Object.entries(weapon.counts)) {
+      counts[id] = Math.max(counts[id] ?? 0, value);
+    }
+    weapons[key] = { completed, counts };
+  }
+  return {
+    selectedLine: incoming.selectedLine,
+    selectedJob: incoming.selectedJob,
+    shared,
+    weapons,
+  };
+}
+
 export function restoreProgressFile(raw: string) {
-  useProgress.setState(readReliquarySave(raw));
+  const incoming = readReliquarySave(raw);
+  const current = useProgress.getState();
+  useProgress.setState(mergeProgress(current, incoming));
 }
 
 export function getWeapon(slice: ProgressSlice, line: LineId, job: JobId): WeaponProgress {

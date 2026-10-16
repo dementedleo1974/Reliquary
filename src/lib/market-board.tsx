@@ -189,7 +189,7 @@ export function BoardView() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-3xl text-fg">Market</h2>
-          <p className="mt-1 text-sm text-muted">One tab per server, then one tab per world</p>
+          <p className="mt-1 text-sm text-muted">Pick your data center, then your world. These are current listings for relic materials.</p>
         </div>
       </div>
       <BoardSelect />

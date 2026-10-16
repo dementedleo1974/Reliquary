@@ -384,3 +384,4 @@ const sample = vendors.find((v) => v.name === "Auriana") ?? vendors.find((v) => 
 console.log("sample", sample && { name: sample.name, x: sample.x, y: sample.y, map: sample.map, items: sample.items.length });
 const { spawnSync } = await import("node:child_process");
 spawnSync(process.execPath, ["scripts/build-hunts.mjs"], { stdio: "inherit" });
+spawnSync(process.execPath, ["scripts/compress-json.mjs", "public/atlas.json", "public/atlas-places.json", "public/atlas-detail.json"], { stdio: "inherit" });

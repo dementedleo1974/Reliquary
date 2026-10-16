@@ -188,3 +188,5 @@ const plans = targets.map((place) => {
 
 fs.writeFileSync("public/strategies.json", JSON.stringify({ plans }));
 console.log(JSON.stringify({ plans: plans.length, specific: plans.filter((plan) => specific[plan.n]).length, bytes: fs.statSync("public/strategies.json").size }));
+const { spawnSync } = await import("node:child_process");
+spawnSync(process.execPath, ["scripts/compress-json.mjs", "public/strategies.json"], { stdio: "inherit" });

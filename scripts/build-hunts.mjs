@@ -92,3 +92,5 @@ fs.writeFileSync(
 const who = {};
 for (const hunt of hunts) who[hunt.who] = (who[hunt.who] ?? 0) + 1;
 console.log(JSON.stringify({ hunts: hunts.length, who, bytes: fs.statSync("public/atlas.json").size }));
+const { spawnSync } = await import("node:child_process");
+spawnSync(process.execPath, ["scripts/compress-json.mjs", "public/atlas.json", "public/atlas-places.json", "public/atlas-detail.json"], { stdio: "inherit" });

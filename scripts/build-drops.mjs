@@ -184,3 +184,5 @@ nodes.sort((a, b) => a.z.localeCompare(b.z) || a.n.localeCompare(b.n));
 const fs = await import("node:fs");
 fs.writeFileSync("public/drops.json", JSON.stringify({ duties, nodes }));
 console.log("bytes", fs.statSync("public/drops.json").size);
+const { spawnSync } = await import("node:child_process");
+spawnSync(process.execPath, ["scripts/compress-json.mjs", "public/drops.json"], { stdio: "inherit" });

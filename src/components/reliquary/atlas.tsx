@@ -513,6 +513,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
   return (
     <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       <div className="min-w-0">
+        <p className="mb-3 text-sm text-muted">Find a place, then drag the map. Pinch to zoom. Tap a pin to see what is there.</p>
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
           <input

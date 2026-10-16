@@ -79,11 +79,56 @@ function asPlaces(input: unknown): PlacesFile | null {
 }
 
 async function readJson(url: string, max: number): Promise<unknown> {
+  const packed = (await readPacked(url, max)) ?? (await readPlain(url, max));
+  return JSON.parse(packed);
+}
+
+let brotliReady: Promise<boolean> | null = null;
+
+function brotliWorks(): Promise<boolean> {
+  brotliReady ??= (async () => {
+    try {
+      const stream = new Blob(["{}"]).stream().pipeThrough(new CompressionStream("brotli" as CompressionFormat));
+      await new Response(stream).arrayBuffer();
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  return brotliReady;
+}
+
+async function readPacked(url: string, max: number): Promise<string | null> {
+  if (await brotliWorks()) {
+    const brotli = await unpack(`${url}.br`, "brotli", max);
+    if (brotli) return brotli;
+  }
+  return unpack(`${url}.deflate`, "deflate-raw", max);
+}
+
+async function unpack(url: string, format: "brotli" | "deflate-raw", max: number): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.byteLength === 0 || bytes.byteLength > max) return null;
+    const copy = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(copy).set(bytes);
+    const stream = new Blob([copy]).stream().pipeThrough(new DecompressionStream(format as unknown as CompressionFormat));
+    const text = await new Response(stream).text();
+    if (text.length > max) return null;
+    return text;
+  } catch {
+    return null;
+  }
+}
+
+async function readPlain(url: string, max: number): Promise<string> {
   const res = await fetch(url);
   if (!res.ok) throw new Error("missing");
   const text = await res.text();
   if (text.length > max) throw new Error("missing");
-  return JSON.parse(text);
+  return text;
 }
 
 export function rememberedPlaces(): PlacesFile | null {

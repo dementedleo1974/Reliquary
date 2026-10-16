@@ -9,7 +9,6 @@ import {
   Minus,
   Plus,
   RefreshCw,
-  RotateCcw,
   Search,
   Shield,
   ShoppingBag,
@@ -79,14 +78,15 @@ export function ReliquaryApp() {
   const selectLine = useProgress((s) => s.selectLine);
   const selectJob = useProgress((s) => s.selectJob);
   const setHydrated = useProgress((s) => s.setHydrated);
+  const hydrated = useProgress((s) => s.hydrated);
   const weapons = useProgress((s) => s.weapons);
   const shared = useProgress((s) => s.shared);
   const [view, setView] = useState<AppView>("tracker");
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    const result = useProgress.persist.rehydrate();
-    void Promise.resolve(result).then(() => setHydrated());
+    const rehydrate = useProgress.persist?.rehydrate?.();
+    void Promise.resolve(rehydrate).then(() => setHydrated());
   }, [setHydrated]);
 
   useEffect(() => {
@@ -114,6 +114,14 @@ export function ReliquaryApp() {
   const install = useAndroidInstall();
   const livePatch = useLivePatch();
 
+  if (!hydrated) {
+    return (
+      <div className="min-h-dvh bg-bg text-fg">
+        <p className="px-6 pt-16 text-sm text-muted">Opening your progress.</p>
+      </div>
+    );
+  }
+
   return (
     <MarketProvider active={view === "board"}>
     <div className="min-h-dvh overflow-x-hidden bg-bg text-fg">
@@ -127,14 +135,17 @@ export function ReliquaryApp() {
         )}
       >
         {view !== "atlas" && view !== "board" && view !== "beasts" && view !== "time" && view !== "gear" && view !== "skills" && (
-          <ExpansionNav
-            slice={slice}
-            selected={line.id}
-            onSelect={(id) => {
-              selectLine(id);
-              setView("tracker");
-            }}
-          />
+          <>
+            <p className="text-sm text-muted">Which relic are you on?</p>
+            <ExpansionNav
+              slice={slice}
+              selected={line.id}
+              onSelect={(id) => {
+                selectLine(id);
+                setView("tracker");
+              }}
+            />
+          </>
         )}
         {view === "atlas" ? (
           <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening the world.</p>}>
@@ -168,7 +179,9 @@ export function ReliquaryApp() {
             }}
           />
         ) : (
-          <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <>
+            <StartGuide />
+            <div className="mt-4 grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
             <JobRail
               line={line}
               slice={slice}
@@ -183,7 +196,8 @@ export function ReliquaryApp() {
               }}
             />
             <WeaponPanel line={line} job={job} completed={progress.completed} slice={slice} />
-          </div>
+            </div>
+          </>
         )}
       </main>
       {install.showBar && <AndroidInstallBar install={install} />}
@@ -292,7 +306,7 @@ function UpdateButton({ livePatch }: { livePatch: string }) {
       }}
     >
       <RefreshCw className={cn("size-4", checking && "animate-spin")} />
-      <span className="hidden xl:inline">{hint || "Auto"}</span>
+      <span className="hidden xl:inline">{hint || "Updates"}</span>
     </Button>
   );
 }
@@ -301,7 +315,7 @@ const PRIMARY_NAV: Array<{ id: AppView; label: string; icon: typeof ListTodo }> 
   { id: "tracker", label: "Tracker", icon: ListTodo },
   { id: "list", label: "Materials", icon: ShoppingBag },
   { id: "board", label: "Market", icon: Coins },
-  { id: "atlas", label: "World", icon: Globe },
+  { id: "atlas", label: "Maps", icon: Globe },
 ];
 
 const MORE_NAV: Array<{ id: AppView; label: string; hint: string; icon: typeof ListTodo }> = [
@@ -486,7 +500,7 @@ function Header({
               onClick={() => onView("atlas")}
             >
               <Globe className="size-4" />
-              <span className="hidden md:inline">The World</span>
+              <span className="hidden md:inline">Maps</span>
             </Button>
             <Button
               variant={view === "beasts" ? "primary" : "ghost"}
@@ -657,7 +671,7 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
     reader.onload = () => {
       try {
         restoreProgressFile(String(reader.result ?? ""));
-        setNote("Progress imported.");
+        setNote("Progress imported. Nothing already logged was removed.");
         setOpen(false);
       } catch (error) {
         setNote(error instanceof Error ? error.message : "Could not restore that file.");
@@ -687,7 +701,7 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
   async function applyCode() {
     try {
       restoreProgressFile(await decodeSaveCode(code));
-      setNote("Progress restored from the save code.");
+      setNote("Progress restored. Nothing already logged was removed.");
       setOpen(false);
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not read that save code.");
@@ -696,12 +710,15 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
 
   return (
     <div className="relative">
-      <Button variant="ghost" size="sm" className="size-11 px-0 xl:h-9 xl:w-auto xl:px-3" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      <Button variant="ghost" size="sm" className="size-11 px-0 xl:h-9 xl:w-auto xl:px-3" aria-label="Save progress" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         <Download className="size-4" />
-        <span className="hidden xl:inline">Download</span>
+        <span className="hidden xl:inline">Save</span>
       </Button>
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-lg bg-surface p-2 shadow-[var(--shadow-border)]">
+          <p className="px-3 py-2 text-sm text-muted">
+            Progress stays on this device. A restore adds to it and does not erase what you already logged.
+          </p>
           <button
             type="button"
             className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-fg hover:bg-surface-2"
@@ -751,7 +768,6 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
             {install.installed ? "Installed" : install.android ? "Install on Android" : "Install app"}
           </button>
           {(note || install.note) && <p className="px-3 py-2 text-xs text-muted">{note || install.note}</p>}
-          <p className="px-3 pb-2 text-xs text-subtle">The code is the save. It is not an account.</p>
           <input
             ref={fileRef}
             type="file"
@@ -842,6 +858,37 @@ const START_NAME: Record<Job["since"], string> = {
   phantom: "Phantom",
 };
 
+const GUIDE_KEY = "reliquary-guide-dismissed";
+
+function StartGuide() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    setOpen(localStorage.getItem(GUIDE_KEY) !== "1");
+  }, []);
+  if (!open) return null;
+  return (
+    <div className="mt-4 rounded-lg bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
+      <p className="text-sm font-medium text-fg">How to track a relic</p>
+      <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted">
+        <li>Pick the relic you are working on.</li>
+        <li>Pick your job. The role buttons shorten the list.</li>
+        <li>Tap + for each material you already have.</li>
+        <li>Tap “This step is done” when that stage is finished.</li>
+      </ol>
+      <button
+        type="button"
+        className="mt-2 inline-flex min-h-11 items-center text-sm text-accent"
+        onClick={() => {
+          localStorage.setItem(GUIDE_KEY, "1");
+          setOpen(false);
+        }}
+      >
+        Got it
+      </button>
+    </div>
+  );
+}
+
 function JobRail({
   line,
   jobs,
@@ -860,6 +907,7 @@ function JobRail({
   slice: ProgressSlice;
 }) {
   const [ready, setReady] = useState(false);
+  const [role, setRole] = useState<Job["role"] | "all">("all");
   const scroller = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
   useEffect(() => setReady(true), []);
@@ -871,7 +919,8 @@ function JobRail({
       el.getBoundingClientRect().left - root.getBoundingClientRect().left + root.scrollLeft - (root.clientWidth - el.clientWidth) / 2;
     root.scrollTo({ left: Math.max(0, left), behavior: scrolled.current ? "smooth" : "auto" });
     scrolled.current = true;
-  }, [selected]);
+  }, [selected, role]);
+  const shown = role === "all" ? jobs : jobs.filter((job) => job.role === role);
   return (
     <aside className="sticky top-[calc(4.75rem+env(safe-area-inset-top))] z-20 -mx-4 min-w-0 bg-bg/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:top-4 lg:z-auto lg:mx-0 lg:self-start lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
       <div className="relative">
@@ -880,7 +929,7 @@ function JobRail({
           <input
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="Find a job"
+            placeholder="Search jobs, like Paladin"
             autoComplete="off"
             spellCheck={false}
             className="h-11 w-full rounded-md bg-surface pl-10 pr-3 text-base text-fg shadow-[var(--shadow-border)] placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50"
@@ -889,11 +938,26 @@ function JobRail({
           <div className="h-11 w-full rounded-md bg-surface shadow-[var(--shadow-border)]" />
         )}
       </div>
+      <div className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {(["all", "tank", "healer", "melee", "ranged", "caster"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setRole(id)}
+            className={cn(
+              "inline-flex h-11 shrink-0 snap-start items-center rounded-full px-4 text-sm",
+              role === id ? "bg-fg text-accent-fg" : "bg-surface text-muted",
+            )}
+          >
+            {id === "all" ? "All jobs" : ROLE_LABEL[id]}
+          </button>
+        ))}
+      </div>
       <div
         ref={scroller}
         className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:block lg:space-y-1 lg:overflow-visible lg:snap-none [&::-webkit-scrollbar]:hidden"
       >
-        {jobs.map((job) => {
+        {shown.map((job) => {
           const onLine = jobsForLine(line.id).some((j) => j.id === job.id);
           const done = onLine ? getWeapon(slice, line.id, job.id).completed.length : 0;
           const total = line.stages.length;
@@ -923,7 +987,9 @@ function JobRail({
             </button>
           );
         })}
-        {jobs.length === 0 && <p className="px-2 py-4 text-sm text-muted">No jobs match.</p>}
+        {shown.length === 0 && (
+          <p className="px-2 py-4 text-sm text-muted">No jobs match. Try a name like Paladin, or choose All jobs.</p>
+        )}
       </div>
     </aside>
   );
@@ -953,7 +1019,6 @@ function WeaponPanel({
   slice: ProgressSlice;
 }) {
   const toggleStage = useProgress((s) => s.toggleStage);
-  const resetWeapon = useProgress((s) => s.resetWeapon);
   const stageIds = line.stages.map((s) => s.id);
   const currentIdx = Math.min(completed.length, line.stages.length - 1);
   const [viewIdx, setViewIdx] = useState<number | null>(null);
@@ -996,10 +1061,6 @@ function WeaponPanel({
               {job.name} · Level {line.level} · {line.patch}
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="h-11" onClick={() => resetWeapon(line.id, job.id)}>
-            <RotateCcw className="size-4" />
-            Reset
-          </Button>
         </div>
       </div>
 
@@ -1037,15 +1098,26 @@ function WeaponPanel({
               style={{ width: `${Math.round(forged * 100)}%`, background: LINE_GLOW[line.id] }}
             />
           </div>
-          <p className="mt-2 text-xs text-subtle">
+          <p className="mt-2 text-sm text-subtle">
             {stageDone
-              ? "Stage logged"
+              ? idx === doneCount - 1
+                ? "This step is logged. Undo removes only this step."
+                : "This step is logged. Later steps stay saved."
               : idx > doneCount
-                ? "Preview of a later stage"
+                ? "This is a later step. Finish the earlier ones first."
                 : stage.items.length === 0
-                  ? "No materials. Log the clears."
-                  : `${Math.round(forged * 100)}% of materials gathered`}
+                  ? "Nothing to collect. Run the duty, then mark the step done."
+                  : `You have ${Math.round(forged * 100)}% of what this step asks for.`}
           </p>
+          {viewIdx !== null && viewIdx !== currentIdx && (
+            <button
+              type="button"
+              className="mt-2 inline-flex min-h-11 items-center text-sm text-accent"
+              onClick={() => setViewIdx(null)}
+            >
+              Back to my step
+            </button>
+          )}
           <div className="mt-5 stage-enter" key={stage.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
@@ -1065,12 +1137,15 @@ function WeaponPanel({
                 variant={completed.includes(stage.id) ? "primary" : "accent"}
                 size="md"
                 className="w-full sm:w-auto"
+                disabled={stageDone && idx !== doneCount - 1}
                 onClick={() => {
+                  const latest = doneCount > 0 && idx === doneCount - 1;
+                  if (stageDone && !latest) return;
                   toggleStage(line.id, job.id, stage.id, stageIds);
                   setViewIdx(null);
                 }}
               >
-                {completed.includes(stage.id) ? "Logged" : "Mark complete"}
+                {stageDone ? (idx === doneCount - 1 ? "Undo this step" : "Logged") : "This step is done"}
               </Button>
             </div>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{stage.summary}</p>
@@ -1156,7 +1231,7 @@ function ItemBlock({
   return (
     <div className="mt-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h4 className="text-sm font-medium text-fg">Materials</h4>
+        <h4 className="text-sm font-medium text-fg">What this step needs</h4>
         <div className="flex flex-wrap gap-2">
           {SOURCE_FILTERS.map((s) => (
             <button
@@ -1174,7 +1249,7 @@ function ItemBlock({
         <p className="mt-4 text-sm text-muted">
           {stage.items.length === 0
             ? "This stage has no materials. Log the duty clears."
-            : "Nothing in this source."}
+            : "Nothing in this category. Try All."}
         </p>
       ) : (
         <ul className="mt-4 space-y-2">
@@ -1251,8 +1326,11 @@ function ItemRow({
         >
           <Minus className="size-5" />
         </button>
-        <span className="min-w-16 flex-1 text-center text-base tabular text-fg">
-          {have}/{item.qty}
+        <span className="min-w-16 flex-1 text-center">
+          <span className="block text-base tabular text-fg">
+            {have} of {item.qty}
+          </span>
+          <span className="block text-xs text-subtle">{done ? "enough" : "you have"}</span>
         </span>
         <button
           type="button"
@@ -1340,8 +1418,8 @@ function ShoppingView({
       <h2 className="font-display text-3xl text-fg">Materials</h2>
       <p className="mt-1 text-sm text-muted">{line.name}</p>
       <p className="mt-2 max-w-prose text-sm text-muted">
-        What is still required for the next unfinished stage on each {line.short} job. Account-wide
-        items are listed once.
+        Still needed for the next unfinished step on each {line.short} job. Shared items are listed once.
+        Open jumps back to that job.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {SOURCE_FILTERS.map((s) => (
@@ -1357,7 +1435,7 @@ function ShoppingView({
       </div>
       {visible.length === 0 ? (
         <p className="mt-8 text-sm text-muted">
-          Nothing remaining for this filter.
+          Nothing left for this filter. Try All, or this relic is caught up.
         </p>
       ) : (
         <ul className="mt-5 divide-y divide-border">
@@ -1379,7 +1457,7 @@ function ShoppingView({
                 ))}
               </span>
               <span className="tabular text-sm text-muted">
-                {row.have}/{row.item.qty}
+                {row.have} of {row.item.qty}
               </span>
               {row.jobLabel !== "Account" && (
                 <Button

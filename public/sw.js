@@ -1,4 +1,4 @@
-const CACHE = "reliquary-v9";
+const CACHE = "reliquary-v10";
 
 function scopePath() {
   const path = new URL(self.registration.scope).pathname;
@@ -18,12 +18,13 @@ function mapPath(path) {
 }
 
 function atlasPath(url) {
-  return url.pathname === "/atlas-places.json" || url.pathname === "/atlas-detail.json" || url.pathname === "/atlas.json" || url.pathname === "/drops.json" || url.pathname === "/strategies.json";
+  const path = url.pathname.replace(/\.(br|deflate)$/u, "");
+  return path === "/atlas-places.json" || path === "/atlas-detail.json" || path === "/atlas.json" || path === "/drops.json" || path === "/strategies.json";
 }
 
 function cacheable(url) {
   if (url.origin !== self.location.origin) return false;
-  const path = appPath(url.pathname);
+  const path = appPath(url.pathname).replace(/\.(br|deflate)$/u, "");
   if (path.includes("..") || path.startsWith("/api/") || path.startsWith("/__gate")) return false;
   return (
     path === "/" ||
