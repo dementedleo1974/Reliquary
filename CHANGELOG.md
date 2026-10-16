@@ -6,6 +6,8 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 - The Beasts tab now shows a three-horn plan. Kinship is shared by family. Named swaps are the ones the duty guides call out.
 
+- Horns unlock at 1, 10, and 20. FATEs carry the job to 15. That comes from the leveling guide, not from a best-trio list.
+
 ### Beta
 
 - The app is marked Beta in the title and the header. The data can still change as patch notes settle.

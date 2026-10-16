@@ -97,6 +97,7 @@ export const BEAST_STEPS = [
   "Unlock at the Excited Adventurer in New Gridania (11.8, 13.6), quest Strangers in the Wood. You need Dawntrail, one combat job at 50, and the quest The Ultimate Weapon. Cu Sith is handed to you.",
   "Beastmaster stops at 50. The catch checks the enemy you are hitting, so a lower spawn of that beast is valid. Expansion field monsters are above the cap and will not tame.",
   "Raise the job, then catch in level order. Weaken the target under 10% (under 5% if it is sturdy) and use Capture. It is your own mark. A whole party can catch the same enemy.",
+  "The first horn is at level 1, the second at 10, and the third at 20. Level in FATEs until 15, then in the highest dungeon you can enter. Borrow is level 22.",
   "Call a beast before the pull. Each summon lets you use Tempered Release or Borrow once, not both. Parting Blow is the exit, not a filler.",
   "Duty beasts are also gourds. The Crucible vendor's stock grows after the second board of the Crucible of the Unbroken.",
 ];
