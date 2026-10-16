@@ -4,6 +4,11 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 ## 2026-10-16
 
+### Beastmaster
+
+- A Beasts tab lists all 50 Master's Bestiary catches for patch 7.56, grouped by place and ordered by the level you need.
+- Caught beasts stay in the browser. They are not part of the relic save.
+
 ### Jobs and load
 
 - Every combat job is listed on every relic. A later job opens the expansion where that weapon starts.

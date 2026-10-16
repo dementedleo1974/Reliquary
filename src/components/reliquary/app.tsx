@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Search,
   ShoppingBag,
+  Squirrel,
   Smartphone,
 } from "lucide-react";
 import {
@@ -48,6 +49,9 @@ import { LINE_GLOW } from "./line-glow";
 import { StageStrip, WeaponPortrait } from "./weapon-portrait";
 
 const AtlasView = lazy(() => import("./atlas").then((mod) => ({ default: mod.AtlasView })));
+const BeastView = lazy(() => import("./beasts").then((mod) => ({ default: mod.BeastView })));
+
+type AppView = "tracker" | "list" | "board" | "atlas" | "beasts";
 
 const SOURCE_FILTERS: Array<ItemSource | "all"> = [
   "all",
@@ -68,7 +72,7 @@ export function ReliquaryApp() {
   const setHydrated = useProgress((s) => s.setHydrated);
   const weapons = useProgress((s) => s.weapons);
   const shared = useProgress((s) => s.shared);
-  const [view, setView] = useState<"tracker" | "list" | "board" | "atlas">("tracker");
+  const [view, setView] = useState<AppView>("tracker");
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -106,7 +110,7 @@ export function ReliquaryApp() {
     <div className="min-h-dvh overflow-x-hidden bg-bg text-fg">
       <Header view={view} onView={setView} install={install} livePatch={livePatch} />
       <main className={cn("mx-auto min-w-0 max-w-6xl px-4 pt-5 sm:px-6", install.showBar ? "pb-28" : "pb-12")}>
-        {view !== "atlas" && view !== "board" && (
+        {view !== "atlas" && view !== "board" && view !== "beasts" && (
           <ExpansionNav
             slice={slice}
             selected={line.id}
@@ -119,6 +123,10 @@ export function ReliquaryApp() {
         {view === "atlas" ? (
           <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening the world.</p>}>
             <AtlasView livePatch={livePatch} />
+          </Suspense>
+        ) : view === "beasts" ? (
+          <Suspense fallback={<p className="mt-8 text-sm text-muted">Opening the bestiary.</p>}>
+            <BeastView />
           </Suspense>
         ) : view === "board" ? (
           <BoardView />
@@ -265,8 +273,8 @@ function Header({
   install,
   livePatch,
 }: {
-  view: "tracker" | "list" | "board" | "atlas";
-  onView: (v: "tracker" | "list" | "board" | "atlas") => void;
+  view: AppView;
+  onView: (v: AppView) => void;
   install: AndroidInstall;
   livePatch: string;
 }) {
@@ -318,6 +326,14 @@ function Header({
             >
               <Globe className="size-4" />
               <span className="hidden md:inline">The World</span>
+            </Button>
+            <Button
+              variant={view === "beasts" ? "primary" : "ghost"}
+              size="sm"
+              onClick={() => onView("beasts")}
+            >
+              <Squirrel className="size-4" />
+              <span className="hidden md:inline">Beasts</span>
             </Button>
           </div>
           <UpdateButton livePatch={livePatch} />
