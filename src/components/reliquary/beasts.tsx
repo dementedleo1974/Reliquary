@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Check } from "lucide-react";
 import { BEAST_STEPS, BEASTS, HORN_PLAN, NAMED_SWAPS, PROVEN, type Beast } from "@/lib/beasts";
 import { cn } from "@/lib/utils";
 
@@ -101,12 +102,12 @@ export function BeastView() {
         </ul>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-1">
+      <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setLeftOnly((v) => !v)}
           className={cn(
-            "h-8 rounded-full px-3 text-xs",
+            "inline-flex min-h-11 items-center rounded-full px-4 text-sm",
             leftOnly ? "bg-fg text-accent-fg" : "bg-surface text-muted",
           )}
         >
@@ -118,7 +119,7 @@ export function BeastView() {
             type="button"
             onClick={() => setKin(name)}
             className={cn(
-              "h-8 rounded-full px-3 text-xs",
+              "inline-flex min-h-11 items-center rounded-full px-4 text-sm",
               kin === name ? "bg-fg text-accent-fg" : "bg-surface text-muted",
             )}
           >
@@ -140,30 +141,34 @@ export function BeastView() {
                 {group.beasts.map((beast) => {
                   const on = have.has(beast.n);
                   return (
-                    <li key={beast.n} className="rounded-lg bg-surface p-4 shadow-[var(--shadow-border)]">
-                      <div className="flex items-start gap-3">
-                        <button
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() => toggle(beast.n)}
+                    <li key={beast.n}>
+                      <button
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggle(beast.n)}
+                        className="flex w-full items-start gap-3 rounded-lg bg-surface p-3 text-left shadow-[var(--shadow-border)]"
+                      >
+                        <span
                           className={cn(
-                            "mt-0.5 size-5 shrink-0 rounded-sm border border-border",
-                            on && "bg-accent",
+                            "flex size-11 shrink-0 items-center justify-center rounded-md border border-border",
+                            on && "border-accent bg-accent text-accent-fg",
                           )}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-fg">
+                        >
+                          {on && <Check className="size-5" />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm text-fg">
                             <span className="tabular text-accent">{String(beast.n).padStart(2, "0")}</span>{" "}
                             {beast.name}
                             <span className="text-muted"> · {beast.kin} · level {beast.level}</span>
-                          </p>
-                          <p className="mt-1 text-sm text-muted">
+                          </span>
+                          <span className="mt-1 block text-sm text-muted">
                             {beast.mob} · {beast.at}
-                          </p>
-                          <p className="mt-1 text-sm text-fg">{beast.how}</p>
-                          <p className="mt-1 text-xs text-subtle">{beast.skills.join(" · ")}</p>
-                        </div>
-                      </div>
+                          </span>
+                          <span className="mt-1 block text-sm text-fg">{beast.how}</span>
+                          <span className="mt-1 block text-xs text-subtle">{beast.skills.join(" · ")}</span>
+                        </span>
+                      </button>
                     </li>
                   );
                 })}

@@ -128,7 +128,7 @@ function useMarket(): MarketState {
 
 function tabClass(active: boolean) {
   return cn(
-    "shrink-0 rounded-full px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
+    "inline-flex min-h-11 shrink-0 snap-start items-center rounded-full px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
     active ? "bg-fg text-accent-fg" : "bg-surface-2 text-muted hover:text-fg",
   );
 }
@@ -138,14 +138,14 @@ export function BoardSelect() {
   const worlds = worldsOn(server);
   return (
     <div className="mt-4 space-y-2">
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {MARKETS.map((dc) => (
           <button key={dc.name} type="button" className={tabClass(server === dc.name)} onClick={() => setServer(dc.name)}>
             {dc.name}
           </button>
         ))}
       </div>
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {worlds.map((name) => (
           <button key={name} type="button" className={tabClass(world === name)} onClick={() => setWorld(name)}>
             {name}

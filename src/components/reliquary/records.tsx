@@ -157,14 +157,16 @@ export function TimeView() {
           const running = active?.job === job.id;
           const total = totals.get(job.id) ?? 0;
           return (
-            <li key={job.id} className="flex items-center gap-3 rounded-lg bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
-              <span className="w-12 text-xs text-accent">{job.abbrev}</span>
-              <span className="min-w-0 flex-1 text-sm text-fg">{job.name}</span>
-              <span className="tabular text-sm text-muted">
-                {running ? formatDuration(now - active.start) : ready && total > 0 ? formatDuration(total) : "No run"}
+            <li key={job.id} className="flex items-center gap-3 rounded-lg bg-surface px-3 py-3 shadow-[var(--shadow-border)]">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-bg text-xs text-accent">{job.abbrev}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-fg">{job.name}</span>
+                <span className="block text-xs tabular text-muted">
+                  {running ? formatDuration(now - active.start) : ready && total > 0 ? formatDuration(total) : "No run"}
+                </span>
               </span>
               {running ? (
-                <button type="button" onClick={stop} className="h-8 rounded-full bg-fg px-3 text-xs text-accent-fg">
+                <button type="button" onClick={stop} className="h-11 shrink-0 rounded-full bg-fg px-4 text-sm text-accent-fg">
                   Stop
                 </button>
               ) : (
@@ -172,7 +174,7 @@ export function TimeView() {
                   type="button"
                   disabled={active !== null}
                   onClick={() => start(job.id)}
-                  className="h-8 rounded-full bg-surface-2 px-3 text-xs text-fg disabled:text-subtle"
+                  className="h-11 shrink-0 rounded-full bg-surface-2 px-4 text-sm text-fg disabled:text-subtle"
                 >
                   Start
                 </button>
@@ -222,7 +224,7 @@ export function JobSheet({ jobId, expansion }: { jobId: string; expansion: strin
           {running && active ? formatDuration(now - active.start) : ready && total > 0 ? formatDuration(total) : "No run"}
         </p>
         {running ? (
-          <button type="button" onClick={stop} className="mt-2 h-8 rounded-full bg-fg px-3 text-xs text-accent-fg">
+          <button type="button" onClick={stop} className="mt-2 h-11 rounded-full bg-fg px-4 text-sm text-accent-fg">
             Stop
           </button>
         ) : (
@@ -230,7 +232,7 @@ export function JobSheet({ jobId, expansion }: { jobId: string; expansion: strin
             type="button"
             disabled={active !== null}
             onClick={() => start(jobId)}
-            className="mt-2 h-8 rounded-full bg-surface-2 px-3 text-xs text-fg disabled:text-subtle"
+            className="mt-2 h-11 rounded-full bg-surface-2 px-4 text-sm text-fg disabled:text-subtle"
           >
             Start
           </button>
@@ -310,14 +312,14 @@ export function SkillsView() {
           The list is the order the game files teach the actions. A chain is the combo parent stored on
           the action. Role actions are not included. This is not a raid opener.
         </p>
-        <div className="mt-4 flex gap-1 overflow-x-auto pb-1">
+        <div className="mt-4 flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {LOG_JOBS.map((row) => (
             <button
               key={row.id}
               type="button"
               onClick={() => setJob(row.id)}
               className={cn(
-                "h-8 shrink-0 rounded-full px-3 text-xs",
+                "inline-flex h-11 shrink-0 snap-start items-center rounded-full px-4 text-sm",
                 job === row.id ? "bg-fg text-accent-fg" : "bg-surface-2 text-muted",
               )}
             >

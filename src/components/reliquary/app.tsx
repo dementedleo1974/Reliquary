@@ -16,6 +16,8 @@ import {
   Squirrel,
   Smartphone,
   Timer,
+  BookOpen,
+  Ellipsis,
 } from "lucide-react";
 import {
   decodeSaveCode,
@@ -116,7 +118,14 @@ export function ReliquaryApp() {
     <MarketProvider active={view === "board"}>
     <div className="min-h-dvh overflow-x-hidden bg-bg text-fg">
       <Header view={view} onView={setView} install={install} livePatch={livePatch} />
-      <main className={cn("mx-auto min-w-0 max-w-6xl px-4 pt-5 sm:px-6", install.showBar ? "pb-28" : "pb-12")}>
+      <main
+        className={cn(
+          "mx-auto min-w-0 max-w-6xl px-4 pt-5 sm:px-6",
+          install.showBar
+            ? "pb-[calc(10rem+env(safe-area-inset-bottom))] xl:pb-28"
+            : "pb-[calc(6rem+env(safe-area-inset-bottom))] xl:pb-12",
+        )}
+      >
         {view !== "atlas" && view !== "board" && view !== "beasts" && view !== "time" && view !== "gear" && view !== "skills" && (
           <ExpansionNav
             slice={slice}
@@ -178,6 +187,7 @@ export function ReliquaryApp() {
         )}
       </main>
       {install.showBar && <AndroidInstallBar install={install} />}
+      <MobileDock view={view} onView={setView} />
     </div>
     </MarketProvider>
   );
@@ -262,6 +272,7 @@ function UpdateButton({ livePatch }: { livePatch: string }) {
     <Button
       variant="ghost"
       size="sm"
+      className="size-11 px-0 xl:h-9 xl:w-auto xl:px-3"
       title={
         hint ||
         (livePatch
@@ -281,8 +292,126 @@ function UpdateButton({ livePatch }: { livePatch: string }) {
       }}
     >
       <RefreshCw className={cn("size-4", checking && "animate-spin")} />
-      <span className="hidden sm:inline">{hint || "Auto"}</span>
+      <span className="hidden xl:inline">{hint || "Auto"}</span>
     </Button>
+  );
+}
+
+const PRIMARY_NAV: Array<{ id: AppView; label: string; icon: typeof ListTodo }> = [
+  { id: "tracker", label: "Tracker", icon: ListTodo },
+  { id: "list", label: "Materials", icon: ShoppingBag },
+  { id: "board", label: "Market", icon: Coins },
+  { id: "atlas", label: "World", icon: Globe },
+];
+
+const MORE_NAV: Array<{ id: AppView; label: string; hint: string; icon: typeof ListTodo }> = [
+  { id: "beasts", label: "Beasts", hint: "Beastmaster log", icon: Squirrel },
+  { id: "time", label: "Time", hint: "Run timer", icon: Timer },
+  { id: "gear", label: "Gear", hint: "Catch-up sets", icon: Shield },
+  { id: "skills", label: "Skills", hint: "Action order", icon: BookOpen },
+];
+
+function MobileDock({ view, onView }: { view: AppView; onView: (v: AppView) => void }) {
+  const [more, setMore] = useState(false);
+  const moreCurrent = MORE_NAV.find((item) => item.id === view);
+  const MoreIcon = moreCurrent?.icon ?? Ellipsis;
+
+  useEffect(() => {
+    if (!more) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMore(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [more]);
+
+  return (
+    <div className="xl:hidden">
+      {more && (
+        <button
+          type="button"
+          aria-label="Close more sections"
+          className="fixed inset-0 z-40 bg-bg/70"
+          onClick={() => setMore(false)}
+        />
+      )}
+      {more && (
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-50 px-3 pb-2">
+          <div
+            role="dialog"
+            aria-label="More sections"
+            className="mx-auto grid max-w-lg grid-cols-2 gap-2 rounded-xl bg-surface p-2 shadow-[var(--shadow-border)]"
+          >
+            {MORE_NAV.map((item) => {
+              const Icon = item.icon;
+              const on = view === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    onView(item.id);
+                    setMore(false);
+                  }}
+                  className={cn(
+                    "flex min-h-16 items-center gap-3 rounded-lg px-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
+                    on ? "bg-fg text-accent-fg" : "bg-bg text-fg",
+                  )}
+                >
+                  <Icon className="size-5 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">{item.label}</span>
+                    <span className={cn("block text-xs", on ? "text-accent-fg/70" : "text-muted")}>{item.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <nav
+        aria-label="Sections"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-bg/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="mx-auto grid h-16 max-w-lg grid-cols-5">
+          {PRIMARY_NAV.map((item) => {
+            const Icon = item.icon;
+            const on = view === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-current={on ? "page" : undefined}
+                onClick={() => {
+                  onView(item.id);
+                  setMore(false);
+                }}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 px-0.5 text-xs leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60",
+                  on ? "text-accent" : "text-subtle",
+                )}
+              >
+                <Icon className="size-5" />
+                {item.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            aria-expanded={more}
+            aria-current={moreCurrent ? "page" : undefined}
+            onClick={() => setMore((value) => !value)}
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 px-0.5 text-xs leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60",
+              more || moreCurrent ? "text-accent" : "text-subtle",
+            )}
+          >
+            <MoreIcon className="size-5" />
+            {moreCurrent ? moreCurrent.label : "More"}
+          </button>
+        </div>
+      </nav>
+    </div>
   );
 }
 
@@ -298,13 +427,13 @@ function Header({
   livePatch: string;
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-bg/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-border bg-bg/95 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="min-w-0">
-          <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">Final Fantasy XIV</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-subtle">Final Fantasy XIV</p>
           <div className="flex items-center gap-2">
             <h1 className="truncate font-display text-2xl leading-none text-fg sm:text-3xl">Reliquary</h1>
-            <span className="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-accent">
+            <span className="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-xs uppercase tracking-[0.14em] text-accent">
               Beta
             </span>
           </div>
@@ -312,7 +441,7 @@ function Header({
             href="https://github.com/dementedleo1974/Reliquary"
             target="_blank"
             rel="noreferrer"
-            className="mt-1 block max-w-full truncate text-xs text-subtle hover:text-accent"
+            className="mt-1 hidden max-w-full truncate text-xs text-subtle hover:text-accent xl:block"
           >
             github.com/dementedleo1974/Reliquary
           </a>
@@ -320,13 +449,13 @@ function Header({
             href="https://dementedleo1974.github.io/Reliquary/"
             target="_blank"
             rel="noreferrer"
-            className="mt-0.5 block max-w-full truncate text-xs text-accent hover:text-fg"
+            className="mt-0.5 hidden max-w-full truncate text-xs text-accent hover:text-fg xl:block"
           >
             Open or install
           </a>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-md bg-surface p-0.5 shadow-[var(--shadow-border)]">
+        <div className="flex shrink-0 items-center gap-1">
+          <div className="hidden items-center rounded-md bg-surface p-0.5 shadow-[var(--shadow-border)] xl:flex">
             <Button
               variant={view === "tracker" ? "primary" : "ghost"}
               size="sm"
@@ -488,7 +617,7 @@ function useAndroidInstall(): AndroidInstall {
 
 function AndroidInstallBar({ install }: { install: AndroidInstall }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-bg/95 px-4 py-3 backdrop-blur-md xl:bottom-0 xl:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex max-w-6xl items-center gap-3">
         <img src={publicPath("/icons/icon-192.png")} alt="" className="size-10 rounded-md shadow-[var(--shadow-border)]" />
         <div className="min-w-0 flex-1">
@@ -500,10 +629,10 @@ function AndroidInstallBar({ install }: { install: AndroidInstall }) {
                 : "Chrome menu, then Install app.")}
           </p>
         </div>
-        <Button size="sm" variant="primary" onClick={() => void install.install()}>
+        <Button size="md" variant="primary" onClick={() => void install.install()}>
           Install
         </Button>
-        <button type="button" className="text-xs text-subtle hover:text-fg" onClick={install.dismiss}>
+        <button type="button" className="min-h-11 px-3 text-sm text-subtle hover:text-fg" onClick={install.dismiss}>
           Dismiss
         </button>
       </div>
@@ -567,15 +696,15 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
 
   return (
     <div className="relative">
-      <Button variant="ghost" size="sm" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      <Button variant="ghost" size="sm" className="size-11 px-0 xl:h-9 xl:w-auto xl:px-3" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         <Download className="size-4" />
-        <span className="hidden sm:inline">Download</span>
+        <span className="hidden xl:inline">Download</span>
       </Button>
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-lg bg-surface p-2 shadow-[var(--shadow-border)]">
+        <div className="absolute right-0 z-20 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-lg bg-surface p-2 shadow-[var(--shadow-border)]">
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
+            className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-fg hover:bg-surface-2"
             onClick={() => void copyCode()}
           >
             <ListTodo className="size-4 text-accent" />
@@ -588,15 +717,15 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
               onChange={(event) => setCode(event.target.value)}
               rows={3}
               spellCheck={false}
-              className="mt-1 w-full resize-none rounded-sm bg-bg px-2 py-1 text-xs text-fg"
+              className="mt-1 w-full resize-none rounded-sm bg-bg px-3 py-2 text-base text-fg"
             />
-            <button type="button" className="mt-1 text-xs text-accent" onClick={() => void applyCode()}>
+            <button type="button" className="mt-1 inline-flex min-h-11 items-center text-sm text-accent" onClick={() => void applyCode()}>
               Restore this code
             </button>
           </label>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
+            className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-fg hover:bg-surface-2"
             onClick={() => {
               downloadProgressFile();
               setNote("Exported reliquary.json");
@@ -607,7 +736,7 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
+            className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-fg hover:bg-surface-2"
             onClick={() => fileRef.current?.click()}
           >
             <ListTodo className="size-4 text-accent" />
@@ -615,7 +744,7 @@ function DownloadMenu({ install }: { install: AndroidInstall }) {
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2"
+            className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-fg hover:bg-surface-2"
             onClick={() => void install.install()}
           >
             <Smartphone className="size-4 text-accent" />
@@ -648,8 +777,20 @@ function ExpansionNav({
   onSelect: (id: RelicLine["id"]) => void;
   slice: ProgressSlice;
 }) {
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const root = nav.current;
+    const el = root?.querySelector<HTMLElement>("[data-active='true']");
+    if (!root || !el) return;
+    const left = el.getBoundingClientRect().left - root.getBoundingClientRect().left + root.scrollLeft - 16;
+    root.scrollTo({ left: Math.max(0, left) });
+  }, [selected]);
+
   return (
-    <nav className="flex max-w-full gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav
+      ref={nav}
+      className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       {RELIC_LINES.map((line) => {
         const { done, total } = lineCompletion(slice, line);
         const active = line.id === selected;
@@ -657,9 +798,10 @@ function ExpansionNav({
           <button
             key={line.id}
             type="button"
+            data-active={active ? "true" : "false"}
             onClick={() => onSelect(line.id)}
             className={cn(
-              "relative h-28 w-44 shrink-0 overflow-hidden rounded-lg text-left shadow-[var(--shadow-border)] transition-[box-shadow,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
+              "relative h-28 w-40 shrink-0 snap-start overflow-hidden rounded-lg text-left shadow-[var(--shadow-border)] transition-[box-shadow,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 sm:w-44",
               active ? "shadow-[var(--shadow-border-hover)]" : "hover:shadow-[var(--shadow-border-hover)]",
             )}
           >
@@ -718,9 +860,20 @@ function JobRail({
   slice: ProgressSlice;
 }) {
   const [ready, setReady] = useState(false);
+  const scroller = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
   useEffect(() => setReady(true), []);
+  useEffect(() => {
+    const root = scroller.current;
+    const el = root?.querySelector<HTMLElement>("[data-active='true']");
+    if (!root || !el) return;
+    const left =
+      el.getBoundingClientRect().left - root.getBoundingClientRect().left + root.scrollLeft - (root.clientWidth - el.clientWidth) / 2;
+    root.scrollTo({ left: Math.max(0, left), behavior: scrolled.current ? "smooth" : "auto" });
+    scrolled.current = true;
+  }, [selected]);
   return (
-    <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+    <aside className="sticky top-[calc(4.75rem+env(safe-area-inset-top))] z-20 -mx-4 min-w-0 bg-bg/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:top-4 lg:z-auto lg:mx-0 lg:self-start lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
         {ready ? (
@@ -730,13 +883,16 @@ function JobRail({
             placeholder="Find a job"
             autoComplete="off"
             spellCheck={false}
-            className="h-10 w-full rounded-md bg-surface pl-10 pr-3 text-sm text-fg shadow-[var(--shadow-border)] placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50"
+            className="h-11 w-full rounded-md bg-surface pl-10 pr-3 text-base text-fg shadow-[var(--shadow-border)] placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50"
           />
         ) : (
-          <div className="h-10 w-full rounded-md bg-surface shadow-[var(--shadow-border)]" />
+          <div className="h-11 w-full rounded-md bg-surface shadow-[var(--shadow-border)]" />
         )}
       </div>
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible">
+      <div
+        ref={scroller}
+        className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:block lg:space-y-1 lg:overflow-visible lg:snap-none [&::-webkit-scrollbar]:hidden"
+      >
         {jobs.map((job) => {
           const onLine = jobsForLine(line.id).some((j) => j.id === job.id);
           const done = onLine ? getWeapon(slice, line.id, job.id).completed.length : 0;
@@ -746,9 +902,10 @@ function JobRail({
             <button
               key={job.id}
               type="button"
+              data-active={active ? "true" : "false"}
               onClick={() => onSelect(job.id)}
               className={cn(
-                "flex min-w-40 items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 lg:min-w-0 lg:w-full",
+                "flex min-h-14 min-w-40 snap-start items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 lg:min-w-0 lg:w-full",
                 active
                   ? "bg-surface text-fg shadow-[inset_2px_0_0_var(--color-accent)]"
                   : "text-muted hover:bg-surface hover:text-fg",
@@ -815,24 +972,39 @@ function WeaponPanel({
 
   return (
     <section className="min-w-0 overflow-hidden rounded-xl bg-surface p-4 shadow-[var(--shadow-border)] sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[0.65rem] uppercase tracking-[0.16em] text-subtle">
-            {line.name} · Item level {stage.ilvl}
-          </p>
-          <h2 className="mt-1 font-display text-3xl text-fg">{title}</h2>
-          <p className="mt-1 text-sm text-muted">
-            {job.name} · Level {line.level} · {line.patch}
-          </p>
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 md:hidden">
+          <WeaponPortrait
+            kind={job.weapon}
+            lineId={line.id}
+            jobId={job.id}
+            stageIndex={idx}
+            stageCount={line.stages.length}
+            name={title}
+            extra={names?.extra}
+            completed={stageDone}
+            size="md"
+          />
         </div>
-        <Button variant="ghost" size="sm" onClick={() => resetWeapon(line.id, job.id)}>
-          <RotateCcw className="size-4" />
-          Reset
-        </Button>
+        <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.16em] text-subtle">
+              {line.name} · Item level {stage.ilvl}
+            </p>
+            <h2 className="mt-1 font-display text-2xl text-fg sm:text-3xl">{title}</h2>
+            <p className="mt-1 text-sm text-muted">
+              {job.name} · Level {line.level} · {line.patch}
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" className="h-11" onClick={() => resetWeapon(line.id, job.id)}>
+            <RotateCcw className="size-4" />
+            Reset
+          </Button>
+        </div>
       </div>
 
-      <div className="mt-6 grid min-w-0 gap-6 md:grid-cols-[minmax(0,280px)_1fr] md:items-start">
-        <div>
+      <div className="mt-5 grid min-w-0 gap-5 md:grid-cols-[minmax(0,280px)_1fr] md:items-start">
+        <div className="hidden md:block">
           <WeaponPortrait
             kind={job.weapon}
             lineId={line.id}
@@ -843,25 +1015,6 @@ function WeaponPanel({
             extra={names?.extra}
             completed={stageDone}
           />
-          <p className="mt-3 text-center text-sm text-fg">
-            Step {idx + 1} of {line.stages.length}
-            <span className="text-muted"> · {stage.name}</span>
-          </p>
-          <div className="mx-auto mt-2 h-1 w-full max-w-48 overflow-hidden rounded-full bg-bg">
-            <div
-              className="h-full transition-[width] duration-300"
-              style={{ width: `${Math.round(forged * 100)}%`, background: LINE_GLOW[line.id] }}
-            />
-          </div>
-          <p className="mt-2 text-center text-xs text-subtle">
-            {stageDone
-              ? "Stage logged"
-              : idx > doneCount
-                ? "Preview of a later stage"
-                : stage.items.length === 0
-                  ? "No materials. Log the clears."
-                  : `${Math.round(forged * 100)}% of materials gathered`}
-          </p>
         </div>
         <div className="min-w-0">
           <StageStrip
@@ -874,9 +1027,28 @@ function WeaponPanel({
             names={line.stages.map((s) => s.name)}
             onSelect={(i) => setViewIdx(i)}
           />
+          <p className="mt-3 text-sm text-fg">
+            Step {idx + 1} of {line.stages.length}
+            <span className="text-muted"> · {stage.name}</span>
+          </p>
+          <div className="mt-2 h-1 w-full max-w-48 overflow-hidden rounded-full bg-bg">
+            <div
+              className="h-full transition-[width] duration-300"
+              style={{ width: `${Math.round(forged * 100)}%`, background: LINE_GLOW[line.id] }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-subtle">
+            {stageDone
+              ? "Stage logged"
+              : idx > doneCount
+                ? "Preview of a later stage"
+                : stage.items.length === 0
+                  ? "No materials. Log the clears."
+                  : `${Math.round(forged * 100)}% of materials gathered`}
+          </p>
           <div className="mt-5 stage-enter" key={stage.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-display text-2xl text-fg">{stage.name}</h3>
                 <p className="text-sm text-muted">
                   {stage.quest} · {stage.npc}
@@ -891,7 +1063,8 @@ function WeaponPanel({
               </div>
               <Button
                 variant={completed.includes(stage.id) ? "primary" : "accent"}
-                size="sm"
+                size="md"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   toggleStage(line.id, job.id, stage.id, stageIds);
                   setViewIdx(null);
@@ -958,6 +1131,13 @@ function WeaponPanel({
   );
 }
 
+function sourceChipClass(on: boolean) {
+  return cn(
+    "inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
+    on ? "bg-fg text-accent-fg" : "bg-surface-2 text-muted hover:text-fg",
+  );
+}
+
 function ItemBlock({
   line,
   job,
@@ -977,16 +1157,13 @@ function ItemBlock({
     <div className="mt-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h4 className="text-sm font-medium text-fg">Materials</h4>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2">
           {SOURCE_FILTERS.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setFilter(s)}
-              className={cn(
-                "h-8 rounded-full px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
-                filter === s ? "bg-fg text-accent-fg" : "bg-surface-2 text-muted hover:text-fg",
-              )}
+              className={sourceChipClass(filter === s)}
             >
               {s === "all" ? "All" : SOURCE_LABEL[s]}
             </button>
@@ -1027,68 +1204,64 @@ function ItemRow({
 
   return (
     <li className="rounded-lg bg-surface-2 p-3 shadow-[var(--shadow-border)] sm:p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className={cn("text-sm font-medium", done ? "text-good" : "text-fg")}>{item.name}</p>
-            {item.shared && (
-              <span className="rounded-full bg-bg px-2 py-0.5 text-xs text-muted">Shared</span>
-            )}
-            {item.sources.map((s) => (
-              <SourceChip key={s} source={s} />
-            ))}
-          </div>
-          <p className="mt-1 text-sm leading-relaxed text-muted">{item.how}</p>
-          {item.coords && (
-            <p className="mt-1 flex items-start gap-1.5 text-xs tabular text-accent">
-              <MapPin className="mt-0.5 size-3.5 shrink-0" />
-              <span>{item.coords}</span>
-            </p>
-          )}
-          {item.cost && <p className="mt-1 text-xs text-accent">{item.cost}</p>}
-          {item.steps && item.steps.length === item.qty && (
-            <ul className="mt-3 grid gap-1 sm:grid-cols-2">
-              {item.steps.map((step, index) => {
-                const on = have > index;
-                return (
-                  <li key={step}>
-                    <button
-                      type="button"
-                      onClick={() => setCount(line.id, job.id, item, on && have === index + 1 ? index : index + 1)}
-                      className={cn(
-                        "w-full rounded-sm px-2 py-1.5 text-left text-xs",
-                        on ? "bg-bg text-good" : "text-muted hover:text-fg",
-                      )}
-                    >
-                      {index + 1}. {step}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className={cn("text-sm font-medium", done ? "text-good" : "text-fg")}>{item.name}</p>
+          {item.shared && <span className="rounded-full bg-bg px-2 py-0.5 text-xs text-muted">Shared</span>}
+          {item.sources.map((s) => (
+            <SourceChip key={s} source={s} />
+          ))}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Decrease"
-            className="flex size-11 items-center justify-center rounded-sm bg-bg text-fg"
-            onClick={() => setCount(line.id, job.id, item, have - 1)}
-          >
-            <Minus className="size-4" />
-          </button>
-          <span className="min-w-[3.5rem] text-center text-sm tabular text-fg">
-            {have}/{item.qty}
-          </span>
-          <button
-            type="button"
-            aria-label="Increase"
-            className="flex size-11 items-center justify-center rounded-sm bg-bg text-fg"
-            onClick={() => setCount(line.id, job.id, item, have + 1)}
-          >
-            {done ? <Check className="size-4 text-good" /> : <Plus className="size-4" />}
-          </button>
-        </div>
+        <p className="mt-1 text-sm leading-relaxed text-muted">{item.how}</p>
+        {item.coords && (
+          <p className="mt-1 flex items-start gap-1.5 text-xs tabular text-accent">
+            <MapPin className="mt-0.5 size-3.5 shrink-0" />
+            <span>{item.coords}</span>
+          </p>
+        )}
+        {item.cost && <p className="mt-1 text-xs text-accent">{item.cost}</p>}
+        {item.steps && item.steps.length === item.qty && (
+          <ul className="mt-3 grid gap-1 sm:grid-cols-2">
+            {item.steps.map((step, index) => {
+              const on = have > index;
+              return (
+                <li key={step}>
+                  <button
+                    type="button"
+                    onClick={() => setCount(line.id, job.id, item, on && have === index + 1 ? index : index + 1)}
+                    className={cn(
+                      "min-h-11 w-full rounded-md px-3 py-2 text-left text-sm",
+                      on ? "bg-bg text-good" : "text-muted hover:text-fg",
+                    )}
+                  >
+                    {index + 1}. {step}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="Decrease"
+          className="flex size-12 items-center justify-center rounded-md bg-bg text-fg"
+          onClick={() => setCount(line.id, job.id, item, have - 1)}
+        >
+          <Minus className="size-5" />
+        </button>
+        <span className="min-w-16 flex-1 text-center text-base tabular text-fg">
+          {have}/{item.qty}
+        </span>
+        <button
+          type="button"
+          aria-label="Increase"
+          className="flex size-12 items-center justify-center rounded-md bg-bg text-fg"
+          onClick={() => setCount(line.id, job.id, item, have + 1)}
+        >
+          {done ? <Check className="size-5 text-good" /> : <Plus className="size-5" />}
+        </button>
       </div>
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-bg">
         <div
@@ -1105,7 +1278,7 @@ function ItemRow({
             <span
               key={mark.label}
               className={cn(
-                "absolute -translate-x-1/2 text-[0.65rem] tabular",
+                "absolute -translate-x-1/2 text-xs tabular",
                 have >= mark.at ? "text-good" : "text-subtle",
               )}
               style={{ left: `${Math.min(100, (mark.at / item.qty) * 100)}%` }}
@@ -1137,7 +1310,7 @@ function SourceChip({ source }: { source: ItemSource }) {
 function UnlockBlock({ line }: { line: RelicLine }) {
   return (
     <details className="mt-8 rounded-lg bg-surface-2 p-4">
-      <summary className="cursor-pointer text-sm font-medium text-fg">Unlock requirements</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-fg">Unlock requirements</summary>
       <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted">
         {line.unlock.map((u) => (
           <li key={u}>{u}</li>
@@ -1170,16 +1343,13 @@ function ShoppingView({
         What is still required for the next unfinished stage on each {line.short} job. Account-wide
         items are listed once.
       </p>
-      <div className="mt-4 flex flex-wrap gap-1">
+      <div className="mt-4 flex flex-wrap gap-2">
         {SOURCE_FILTERS.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => setFilter(s)}
-            className={cn(
-              "h-8 rounded-full px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
-              filter === s ? "bg-fg text-accent-fg" : "bg-surface-2 text-muted hover:text-fg",
-            )}
+            className={sourceChipClass(filter === s)}
           >
             {s === "all" ? "All" : SOURCE_LABEL[s]}
           </button>
@@ -1192,10 +1362,7 @@ function ShoppingView({
       ) : (
         <ul className="mt-5 divide-y divide-border">
           {visible.map((row) => (
-            <li
-              key={`${row.jobLabel}-${row.item.id}`}
-              className="flex flex-wrap items-center gap-3 py-3"
-            >
+            <li key={`${row.jobLabel}-${row.item.id}`} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
               <span className="w-14 text-xs tracking-wide text-accent">{row.jobLabel}</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm text-fg">{row.item.name}</span>
@@ -1216,8 +1383,9 @@ function ShoppingView({
               </span>
               {row.jobLabel !== "Account" && (
                 <Button
-                  size="sm"
+                  size="md"
                   variant="ghost"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     const found = JOBS.find((j) => j.abbrev === row.jobLabel);
                     if (found) onOpenJob(found.id);

@@ -30,7 +30,7 @@ export function WeaponPortrait({
   const tier = stageCount <= 1 ? 1 : stageIndex / (stageCount - 1);
   const awake = 0.22 + tier * 0.78;
   const glow = LINE_GLOW[lineId];
-  const dim = size === "sm" ? "size-16" : size === "md" ? "size-28" : "size-64 max-w-full sm:size-72";
+  const dim = size === "sm" ? "size-16" : size === "md" ? "size-28" : "size-44 max-w-full sm:size-64 md:size-72";
   const live = size !== "sm";
   const icon = publicPath(`/icons/relics/${lineId}/${jobId}/${stageIndex}.png`);
   const painted = publicPath(`/weapons/${lineId}/${kind}.jpg`);
@@ -101,14 +101,14 @@ export function StageStrip({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div className="flex w-full max-w-full gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex w-full max-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {Array.from({ length: stageCount }, (_, i) => (
         <button
           key={names[i] ?? i}
           type="button"
           onClick={() => onSelect(i)}
           className={cn(
-            "flex w-20 shrink-0 flex-col items-center gap-1 rounded-md p-2 transition-[box-shadow,background-color] duration-150",
+            "flex w-24 shrink-0 snap-start flex-col items-center gap-1 rounded-md p-2 transition-[box-shadow,background-color] duration-150",
             i === current ? "bg-surface-2 shadow-[var(--shadow-border-hover)]" : "hover:bg-surface-2/60",
           )}
         >

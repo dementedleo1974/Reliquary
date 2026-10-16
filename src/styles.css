@@ -35,6 +35,7 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
     background: var(--color-bg);
     color: var(--color-fg);
   }
@@ -66,9 +67,27 @@
     cursor: pointer;
   }
 
+  button,
+  a,
+  summary,
+  input,
+  textarea,
+  select,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
   ::selection {
     background: color-mix(in oklab, var(--color-accent) 35%, transparent);
     color: var(--color-fg);
+  }
+}
+
+@media (max-width: 1279px) {
+  input,
+  textarea,
+  select {
+    font-size: 1rem;
   }
 }
 

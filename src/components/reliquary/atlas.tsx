@@ -136,6 +136,8 @@ function MapStage({
 }) {
   const frame = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ d: number; midX: number; midY: number } | null>(null);
   const [view, setView] = useState({ s: 1, x: 0, y: 0 });
 
   useEffect(() => {
@@ -168,30 +170,101 @@ function MapStage({
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
+  function fit(s: number, x: number, y: number, rect: DOMRect) {
+    const next = Math.min(4, Math.max(1, s));
+    const minX = Math.min(0, rect.width - rect.width * next);
+    const minY = Math.min(0, rect.height - rect.height * next);
+    return { s: next, x: Math.min(0, Math.max(minX, x)), y: Math.min(0, Math.max(minY, y)) };
+  }
+
+  function fingerPair() {
+    const pts = [...pointers.current.values()];
+    if (pts.length < 2) return null;
+    const a = pts[0]!;
+    const b = pts[1]!;
+    return { d: Math.hypot(a.x - b.x, a.y - b.y), midX: (a.x + b.x) / 2, midY: (a.y + b.y) / 2 };
+  }
+
+  function endPointer(id: number) {
+    pointers.current.delete(id);
+    pinch.current = null;
+    drag.current = null;
+    if (pointers.current.size === 1) {
+      const remaining = [...pointers.current.values()][0];
+      if (!remaining) return;
+      setView((current) => {
+        drag.current = { x: current.x, y: current.y, px: remaining.x, py: remaining.y };
+        return current;
+      });
+    }
+  }
+
+  function zoomBy(factor: number) {
+    const rect = frame.current?.getBoundingClientRect();
+    if (!rect) return;
+    const midX = rect.width / 2;
+    const midY = rect.height / 2;
+    setView((current) => {
+      const next = Math.min(4, Math.max(1, current.s * factor));
+      const contentX = (midX - current.x) / current.s;
+      const contentY = (midY - current.y) / current.s;
+      return fit(next, midX - contentX * next, midY - contentY * next, rect);
+    });
+  }
+
   return (
     <div
       ref={frame}
       className="relative aspect-square touch-none overflow-hidden rounded-md bg-[#07080c] shadow-[var(--shadow-border)]"
       onPointerDown={(event) => {
         if (event.button !== 0) return;
-        drag.current = { x: view.x, y: view.y, px: event.clientX, py: event.clientY };
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
         event.currentTarget.setPointerCapture(event.pointerId);
+        const pair = fingerPair();
+        const rect = frame.current?.getBoundingClientRect();
+        if (pair && rect) {
+          drag.current = null;
+          pinch.current = { d: pair.d, midX: pair.midX - rect.left, midY: pair.midY - rect.top };
+          return;
+        }
+        setView((current) => {
+          drag.current = { x: current.x, y: current.y, px: event.clientX, py: event.clientY };
+          return current;
+        });
       }}
       onPointerMove={(event) => {
-        const start = drag.current;
+        if (!pointers.current.has(event.pointerId)) return;
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
         const rect = frame.current?.getBoundingClientRect();
-        if (!start || !rect) return;
-        const minX = Math.min(0, rect.width - rect.width * view.s);
-        const minY = Math.min(0, rect.height - rect.height * view.s);
-        setView((current) => ({
-          ...current,
-          x: Math.min(0, Math.max(minX, start.x + event.clientX - start.px)),
-          y: Math.min(0, Math.max(minY, start.y + event.clientY - start.py)),
-        }));
+        if (!rect) return;
+        const pair = fingerPair();
+        if (pair && pinch.current && pair.d > 0) {
+          const midX = pair.midX - rect.left;
+          const midY = pair.midY - rect.top;
+          const start = pinch.current;
+          setView((current) => {
+            const nextS = Math.min(4, Math.max(1, current.s * (pair.d / start.d)));
+            const contentX = (start.midX - current.x) / current.s;
+            const contentY = (start.midY - current.y) / current.s;
+            return fit(nextS, midX - contentX * nextS, midY - contentY * nextS, rect);
+          });
+          pinch.current = { d: pair.d, midX, midY };
+          return;
+        }
+        const start = drag.current;
+        if (!start) return;
+        setView((current) => {
+          const minX = Math.min(0, rect.width - rect.width * current.s);
+          const minY = Math.min(0, rect.height - rect.height * current.s);
+          return {
+            ...current,
+            x: Math.min(0, Math.max(minX, start.x + event.clientX - start.px)),
+            y: Math.min(0, Math.max(minY, start.y + event.clientY - start.py)),
+          };
+        });
       }}
-      onPointerUp={() => {
-        drag.current = null;
-      }}
+      onPointerUp={(event) => endPointer(event.pointerId)}
+      onPointerCancel={(event) => endPointer(event.pointerId)}
     >
       <div
         className="absolute inset-0"
@@ -209,18 +282,19 @@ function MapStage({
         />
         {children}
       </div>
-      <div className="absolute bottom-2 right-2 flex gap-1">
+      <div className="absolute bottom-3 right-3 flex gap-2">
         <button
           type="button"
-          className="rounded-sm bg-bg/90 px-2 py-1 text-xs text-fg shadow-[var(--shadow-border)]"
+          aria-label="Zoom in"
+          className="flex size-11 items-center justify-center rounded-md bg-bg/90 text-lg text-fg shadow-[var(--shadow-border)]"
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={() => setView((current) => ({ ...current, s: Math.min(4, current.s * 1.25) }))}
+          onClick={() => zoomBy(1.25)}
         >
           +
         </button>
         <button
           type="button"
-          className="rounded-sm bg-bg/90 px-2 py-1 text-xs text-fg shadow-[var(--shadow-border)]"
+          className="flex h-11 items-center justify-center rounded-md bg-bg/90 px-3 text-sm text-fg shadow-[var(--shadow-border)]"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => setView({ s: 1, x: 0, y: 0 })}
         >
@@ -228,9 +302,10 @@ function MapStage({
         </button>
         <button
           type="button"
-          className="rounded-sm bg-bg/90 px-2 py-1 text-xs text-fg shadow-[var(--shadow-border)]"
+          aria-label="Zoom out"
+          className="flex size-11 items-center justify-center rounded-md bg-bg/90 text-lg text-fg shadow-[var(--shadow-border)]"
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={() => setView((current) => ({ s: Math.max(1, current.s / 1.25), x: 0, y: 0 }))}
+          onClick={() => zoomBy(0.8)}
         >
           −
         </button>
@@ -257,6 +332,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
   const [spot, setSpot] = useState<number | null>(null);
   const [panel, setPanel] = useState<"hunts" | "vendors" | "drops" | "plan">("hunts");
   const [huntKind, setHuntKind] = useState<"all" | "job" | "gc">("all");
+  const detailRef = useRef<HTMLElement>(null);
   const [brokenMap, setBrokenMap] = useState(false);
 
   useEffect(() => {
@@ -446,14 +522,14 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
             className="h-11 w-full rounded-md bg-surface pl-9 pr-3 text-sm text-fg shadow-[var(--shadow-border)] outline-none placeholder:text-subtle focus-visible:ring-2 focus-visible:ring-accent/60"
           />
         </label>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-2">
           {FILTERS.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setFilter(item.id)}
               className={cn(
-                "rounded-sm px-2.5 py-1 text-xs",
+                "inline-flex min-h-11 items-center rounded-full px-4 text-sm",
                 filter === item.id ? "bg-fg text-accent-fg" : "bg-surface text-muted shadow-[var(--shadow-border)]",
               )}
             >
@@ -465,7 +541,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
           {visible.length} shown · patch {patch}
           {livePatch ? ` · live ${livePatch}` : ""}
         </p>
-        <ul className="mt-2 max-h-[28rem] space-y-3 overflow-y-auto pr-1 lg:max-h-[calc(100dvh-16rem)]">
+        <ul className="mt-2 max-h-64 space-y-3 overflow-y-auto overscroll-y-contain pr-1 lg:max-h-[calc(100dvh-16rem)]">
           {groups.map((group) => (
             <li key={group.region}>
               <p className="px-3 pb-1 text-[0.65rem] uppercase tracking-[0.16em] text-subtle">{group.region}</p>
@@ -475,9 +551,16 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                     <button
                       type="button"
                       data-atlas-selected={place?.id === item.id ? "true" : "false"}
-                      onClick={() => setPlaceId(item.id)}
+                      onClick={() => {
+                        setPlaceId(item.id);
+                        if (window.matchMedia("(max-width: 1023px)").matches) {
+                          requestAnimationFrame(() => {
+                            detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                          });
+                        }
+                      }}
                       className={cn(
-                        "w-full rounded-md px-3 py-2 text-left",
+                        "min-h-12 w-full rounded-md px-3 py-3 text-left",
                         place?.id === item.id ? "bg-surface-2 shadow-[var(--shadow-border)]" : "hover:bg-surface",
                       )}
                     >
@@ -496,7 +579,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
       </div>
 
       {place ? (
-        <section className="min-w-0 rounded-lg bg-surface p-4 shadow-[var(--shadow-border)] sm:p-5">
+        <section ref={detailRef} className="min-w-0 scroll-mt-24 rounded-lg bg-surface p-4 shadow-[var(--shadow-border)] sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-[0.65rem] uppercase tracking-[0.16em] text-subtle">
@@ -540,11 +623,18 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                       setPanel("vendors");
                     }}
                     className={cn(
-                      "absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#0b0c10] bg-accent shadow",
-                      on && "z-10 size-4 ring-2 ring-fg",
+                      "absolute flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center",
+                      on && "z-10",
                     )}
                     style={{ left: `${v.px}%`, top: `${v.py}%` }}
-                  />
+                  >
+                    <span
+                      className={cn(
+                        "size-3 rounded-full border border-[#0b0c10] bg-accent shadow",
+                        on && "size-4 ring-2 ring-fg",
+                      )}
+                    />
+                  </button>
                 );
               })}
               {duty?.coffers.map((coffer, index) => {
@@ -564,11 +654,18 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                       setPanel("drops");
                     }}
                     className={cn(
-                      "absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-[#0b0c10] bg-[#e0b15a] shadow",
-                      on && "z-10 size-4 ring-2 ring-fg",
+                      "absolute flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center",
+                      on && "z-10",
                     )}
                     style={{ left: `${left}%`, top: `${top}%` }}
-                  />
+                  >
+                    <span
+                      className={cn(
+                        "size-3 rounded-sm border border-[#0b0c10] bg-[#e0b15a] shadow",
+                        on && "size-4 ring-2 ring-fg",
+                      )}
+                    />
+                  </button>
                 );
               })}
               {zoneNodes.map((node, index) => {
@@ -582,18 +679,20 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                     title={`${node.n} · ${node.k} (${node.x}, ${node.y})`}
                     onPointerDown={(event) => event.stopPropagation()}
                     onClick={() => setPanel("drops")}
-                    className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#0b0c10] bg-[#7dcea0] shadow"
+                    className="absolute flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
                     style={{ left: `${left}%`, top: `${top}%` }}
-                  />
+                  >
+                    <span className="size-2.5 rounded-full border border-[#0b0c10] bg-[#7dcea0] shadow" />
+                  </button>
                 );
               })}
             </MapStage>
           )}
 
           <div className="min-w-0">
-          <p className="mb-2 text-xs text-subtle">Drag to move the map. Scroll or use the buttons to zoom.</p>
+          <p className="mb-2 text-xs text-subtle">Drag to pan. Pinch, scroll, or use the buttons to zoom.</p>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-md bg-bg p-0.5">
+            <div className="flex flex-wrap rounded-md bg-bg p-1">
               {(["plan", "drops", "hunts", "vendors"] as const)
                 .filter((id) => id !== "plan" || plan)
                 .map((id) => (
@@ -602,7 +701,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                   type="button"
                   onClick={() => setPanel(id)}
                   className={cn(
-                    "rounded-sm px-3 py-1.5 text-sm",
+                    "inline-flex min-h-11 items-center rounded-md px-3 text-sm",
                     panel === id ? "bg-fg text-accent-fg" : "text-muted",
                   )}
                 >
@@ -617,7 +716,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                   type="button"
                   onClick={() => setHuntKind(id)}
                   className={cn(
-                    "rounded-sm px-2.5 py-1 text-xs",
+                    "inline-flex min-h-11 items-center rounded-full px-4 text-sm",
                     huntKind === id ? "bg-surface-2 text-fg shadow-[var(--shadow-border)]" : "text-muted",
                   )}
                 >
@@ -653,7 +752,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                     href={link.u}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-sm bg-surface-2 px-2.5 py-1 text-xs text-accent"
+                    className="inline-flex min-h-11 items-center rounded-md bg-surface-2 px-3 text-sm text-accent"
                   >
                     {link.s}
                   </a>
@@ -673,7 +772,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                         if (next) setPlaceId(next.id);
                       }}
                       className={cn(
-                        "rounded-sm px-2.5 py-1 text-xs",
+                        "inline-flex min-h-11 items-center rounded-full px-4 text-sm",
                         duty?.n === item.n ? "bg-surface-2 text-fg shadow-[var(--shadow-border)]" : "text-muted",
                       )}
                     >
@@ -699,7 +798,10 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                       <button
                         type="button"
                         onClick={() => setSpot(index)}
-                        className={cn("text-left text-[0.65rem] uppercase tracking-[0.16em]", spot === index ? "text-fg" : "text-subtle")}
+                        className={cn(
+                          "block min-h-11 py-2 text-left text-xs uppercase tracking-[0.16em]",
+                          spot === index ? "text-fg" : "text-subtle",
+                        )}
                       >
                         Coffer {index + 1}
                         {coffer.x != null ? ` · ${coffer.x}, ${coffer.y}` : ""}
@@ -800,7 +902,7 @@ export function AtlasView({ livePatch = "" }: { livePatch?: string }) {
                       type="button"
                       onClick={() => setVendorKey(key)}
                       className={cn(
-                        "w-full rounded-md px-2.5 py-2 text-left",
+                        "min-h-12 w-full rounded-md px-3 py-3 text-left",
                         vendorKey === key ? "bg-surface-2 shadow-[var(--shadow-border)]" : "hover:bg-surface-2",
                       )}
                     >
