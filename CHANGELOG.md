@@ -4,6 +4,10 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 ## 2026-10-16
 
+### Beta
+
+- The app is marked Beta in the title and the header. The data can still change as patch notes settle.
+
 ### Beastmaster
 
 - A Beasts tab lists all 50 Master's Bestiary catches for patch 7.56, grouped by place and ordered by the level you need.

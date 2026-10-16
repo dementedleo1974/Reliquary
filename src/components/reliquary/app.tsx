@@ -283,7 +283,12 @@ function Header({
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="min-w-0">
           <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">Final Fantasy XIV</p>
-          <h1 className="truncate font-display text-2xl leading-none text-fg sm:text-3xl">Reliquary</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="truncate font-display text-2xl leading-none text-fg sm:text-3xl">Reliquary</h1>
+            <span className="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-accent">
+              Beta
+            </span>
+          </div>
           <a
             href="https://github.com/dementedleo1974/Reliquary"
             target="_blank"
