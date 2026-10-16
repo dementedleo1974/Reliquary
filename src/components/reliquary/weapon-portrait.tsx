@@ -3,30 +3,6 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { LINE_GLOW } from "./line-glow";
 
-const MOTION: Record<WeaponKind, string> = {
-  sword: "motion-swing",
-  axe: "motion-swing",
-  greatsword: "motion-heave",
-  gunblade: "motion-recoil",
-  fist: "motion-punch",
-  polearm: "motion-bob",
-  daggers: "motion-flick",
-  katana: "motion-draw",
-  scythe: "motion-swing",
-  twinblades: "motion-spin",
-  bow: "motion-draw",
-  firearm: "motion-recoil",
-  chakrams: "motion-spin",
-  staff: "motion-bob",
-  grimoire: "motion-flutter",
-  rapier: "motion-flick",
-  brush: "motion-draw",
-  cane: "motion-bob",
-  codex: "motion-flutter",
-  globe: "motion-spin",
-  nouliths: "motion-hover",
-};
-
 interface Props {
   kind: WeaponKind;
   lineId: LineId;
@@ -66,8 +42,7 @@ export function WeaponPortrait({
 
   return (
     <div
-      className={cn("weapon-stage relative mx-auto aspect-square overflow-hidden rounded-lg", dim, !gameIcon && MOTION[kind], live && "weapon-stage-live")}
-      data-still={live ? undefined : "true"}
+      className={cn("weapon-stage relative mx-auto aspect-square overflow-hidden rounded-lg", dim, gameIcon && "weapon-game")}
       style={{
         ["--glow" as string]: glow,
         ["--awake" as string]: String(awake),
@@ -78,28 +53,16 @@ export function WeaponPortrait({
         <img
           src={src}
           alt={live ? `${name}, step ${stageIndex + 1} of ${stageCount}` : ""}
-          className={gameIcon ? "size-full object-contain p-2" : "weapon-plate"}
+          className={gameIcon ? "weapon-art weapon-game-icon" : "weapon-plate weapon-art"}
           draggable={false}
           onError={() => {
+            if (!gameIcon) return;
             setGameIcon(false);
             setSrc(painted);
           }}
         />
+        {gameIcon && live && <img src={src} alt="" className="weapon-bloom" draggable={false} />}
       </div>
-      {live && tier >= 0.6 && <span className="weapon-sheen" aria-hidden />}
-      {live && tier >= 0.3 && (
-        <span className="weapon-motes" aria-hidden>
-          <i />
-          <i />
-          {tier >= 0.6 && <i />}
-          {tier >= 0.85 && (
-            <>
-              <i />
-              <i />
-            </>
-          )}
-        </span>
-      )}
       {completed && size !== "sm" && (
         <span className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-fg px-2 py-0.5 text-xs font-medium tracking-wide text-accent-fg">
           Complete

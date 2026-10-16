@@ -1,18 +1,23 @@
 # Changelog
 
-A supplement to the commit history. Dates are when the change landed in this repo.
+A supplement to the commit history. Dates are when the change landed in this repository.
 
 ## 2026-10-16
 
 ### Repository
 
-- The app links to https://github.com/dementedleo1974/Reliquary.
-- Pushes to main build the app and keep the result on that run.
+- The header links to the source repository.
+- Pushes to main build the app. The result is kept on that run.
+
+### Weapon pictures
+
+- Zodiac stages use the game item icons. Later relics use a game icon when the item name matches, and the painted picture when it does not.
+- The weapon card stays still. The light is not the glow from a drawn weapon.
 
 ### Save code
 
-- Download can copy a save code and paste it on another device.
-- The code is the same save as the file. It is checked the same way and it is not an account.
+- Download copies a save code that pastes onto another device.
+- The code is the same save as the file. It is checked the same way, and it is not an account.
 
 ### Grind checklists
 
@@ -22,17 +27,10 @@ A supplement to the commit history. Dates are when the change landed in this rep
 ### Fight cards
 
 - Ultimates, plus Heavyweight M1 and M2, list each phase, the Party Finder name, and the wipe.
-- Other duties no longer repeat one generic plan. They keep the wiki link until a phase card exists.
+- Other duties keep the reference link until a phase card exists.
 
-### Weapon icons
-
-- Zodiac stages use the game item icons.
-- Later relics use a game icon where the item name matched, and the painted picture where it did not.
-
-## 2026-10-16 — earlier
+## Earlier
 
 - World maps, duty drops, and gathering pins are stored in the app.
-- Savage, Ultimate, and Chaotic duties link to a plan.
-- Relic chances are listed by phase: Atma, Luminous crystals, Umbrite, Anemos, Demiatma, and Resistance memories.
 - Market Board prices are per world.
 - Progress stays in the browser.

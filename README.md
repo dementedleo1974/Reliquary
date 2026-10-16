@@ -1,7 +1,17 @@
-This is a beta phased app. I'm trying to make it something like Atlas from other creators. It just seemed easier for me to look at phone or a 2nd screen or 3rd if you have and know where I am at in process of finishing my relic. Self contained and tested by me. I ask that you have a love for the shared knowledge. we all gain something from one another.
+# Reliquary
 
-Source: https://github.com/dementedleo1974/Reliquary
+A free Final Fantasy XIV companion for relic weapons. Track each job, the materials still outstanding, Market Board prices, and where to go on the map. Progress stays on the device.
 
-Every push to main builds itself. The built app is attached to that run.
+## Source
 
+https://github.com/dementedleo1974/Reliquary
 
+Pushes to `main` build the app. The result is attached to that Actions run.
+
+## What it covers
+
+- Relic lines from Zodiac through Phantom, with the materials to farm, buy, or craft
+- A save code that moves progress between devices, without an account
+- Named steps for the long grinds, and the known chance on each random phase
+- Market prices for the world you pick
+- Zones, duties, drops, and phase notes for Savage and Ultimate fights
