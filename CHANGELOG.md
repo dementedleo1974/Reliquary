@@ -10,6 +10,8 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 - Removed the single-run times and the unofficial census. The Beasts tab now keeps the Lodestone rules: rank 25 at 100 experience each, and the patch 7.57 ranking season.
 
+- Gear now shows the tomestone table's item level range, not only the top number. Skills also lists the shared role actions from the game files.
+
 ### Time, gear, and skills
 
 - Time is a timer for each combat job and Beastmaster. A duration is stored only for a run that was started here.

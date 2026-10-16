@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { GEAR_LADDER } from "@/lib/gear-ladder";
-import { JOB_ACTIONS, type JobAction } from "@/lib/job-actions";
+import { JOB_ACTIONS, ROLE_ACTIONS, type JobAction } from "@/lib/job-actions";
 import { JOBS } from "@/lib/relics";
 import { cn } from "@/lib/utils";
 
@@ -205,6 +205,10 @@ export function SkillsView() {
   const [job, setJob] = useState(LOG_JOBS[0]!.id);
   const actions = JOB_ACTIONS[job] ?? [];
   const lines = useMemo(() => chains(actions), [actions]);
+  const role = JOBS.find((row) => row.id === job)?.role;
+  const shared = ROLE_ACTIONS.filter((action) => role !== undefined && action.roles.includes(role)).sort(
+    (a, b) => a.level - b.level || a.name.localeCompare(b.name),
+  );
 
   return (
     <section className="mt-6 min-w-0">
@@ -247,6 +251,19 @@ export function SkillsView() {
           </li>
         ))}
       </ul>
+      {shared.length > 0 && (
+        <>
+          <h3 className="mt-6 font-display text-2xl text-fg">Role actions</h3>
+          <ul className="mt-2 divide-y divide-border rounded-lg bg-surface px-4 shadow-[var(--shadow-border)]">
+            {shared.map((action) => (
+              <li key={action.name} className="flex gap-3 py-2 text-sm">
+                <span className="w-10 tabular text-accent">{action.level}</span>
+                <span className="text-fg">{action.name}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   );
 }

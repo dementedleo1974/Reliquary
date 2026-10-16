@@ -714,3 +714,38 @@ export const JOB_ACTIONS: Record<string, JobAction[]> = {
     { name: "Rallying Cheer", level: 40, after: "" },
   ],
 };
+
+export interface RoleAction {
+  name: string;
+  level: number;
+  roles: Array<"tank" | "healer" | "melee" | "ranged" | "caster">;
+}
+
+/** Shared role actions from the game files. Beastmaster is not on these lists. */
+export const ROLE_ACTIONS: RoleAction[] = [
+  { name: "Rampart", level: 8, roles: ["tank"] },
+  { name: "Low Blow", level: 12, roles: ["tank"] },
+  { name: "Provoke", level: 15, roles: ["tank"] },
+  { name: "Interject", level: 18, roles: ["tank"] },
+  { name: "Reprisal", level: 22, roles: ["tank"] },
+  { name: "Shirk", level: 48, roles: ["tank"] },
+  { name: "Repose", level: 8, roles: ["healer"] },
+  { name: "Esuna", level: 10, roles: ["healer"] },
+  { name: "Rescue", level: 48, roles: ["healer"] },
+  { name: "Lucid Dreaming", level: 14, roles: ["healer", "caster"] },
+  { name: "Swiftcast", level: 18, roles: ["healer", "caster"] },
+  { name: "Surecast", level: 44, roles: ["healer", "caster"] },
+  { name: "Second Wind", level: 8, roles: ["melee", "ranged"] },
+  { name: "Leg Sweep", level: 10, roles: ["melee"] },
+  { name: "Bloodbath", level: 12, roles: ["melee"] },
+  { name: "Feint", level: 22, roles: ["melee"] },
+  { name: "True North", level: 50, roles: ["melee"] },
+  { name: "Arm's Length", level: 32, roles: ["tank", "melee", "ranged"] },
+  { name: "Leg Graze", level: 6, roles: ["ranged"] },
+  { name: "Foot Graze", level: 10, roles: ["ranged"] },
+  { name: "Peloton", level: 20, roles: ["ranged"] },
+  { name: "Head Graze", level: 24, roles: ["ranged"] },
+  { name: "Addle", level: 8, roles: ["caster"] },
+  { name: "Sleep", level: 10, roles: ["caster"] },
+];
+
