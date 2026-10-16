@@ -4,6 +4,10 @@ A supplement to the commit history. Dates are when the change landed in this rep
 
 ## 2026-10-16
 
+### Repository
+
+- The app links to https://github.com/dementedleo1974/Reliquary.
+
 ### Save code
 
 - Download can copy a save code and paste it on another device.

@@ -1,6 +1,10 @@
 {
   "name": "app-builder-workspace",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dementedleo1974/Reliquary.git"
+  },
   "sideEffects": false,
   "type": "module",
   "overrides": {

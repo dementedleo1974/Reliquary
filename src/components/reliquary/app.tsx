@@ -274,6 +274,14 @@ function Header({
         <div className="min-w-0">
           <p className="text-[0.65rem] uppercase tracking-[0.18em] text-subtle">Final Fantasy XIV</p>
           <h1 className="truncate font-display text-2xl leading-none text-fg sm:text-3xl">Reliquary</h1>
+          <a
+            href="https://github.com/dementedleo1974/Reliquary"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 block truncate text-xs text-subtle hover:text-accent"
+          >
+            github.com/dementedleo1974/Reliquary
+          </a>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-md bg-surface p-0.5 shadow-[var(--shadow-border)]">
