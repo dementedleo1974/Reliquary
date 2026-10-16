@@ -85,6 +85,13 @@ export const HORN_PLAN = [
   },
 ];
 
+export const PLAYER_TIME = [
+  "Most active characters have not spent this time. A 4 October 2026 Lodestone count put Beastmaster at level 50 on about one active character in ten, and about seven in ten had not unlocked it.",
+  "The job level is the short part. A measured loop of level 50 mobs in western Coerthas was about 34 minutes, and that only works if those mobs still give experience. Open-world kills do not get the Blue Mage bonus. FATEs do.",
+  "The long part is beast rank. One player cleared every Third Degree board with 21 beasts at rank 25 and stopped. A fast Second Master's Board was about 15 minutes and paid 57 beast experience. A normal one was 20 to 25.",
+  "Ranked season 1 starts 25 October 2026 at 10:00 p.m. PDT and runs through late November. It is Third Degree only, on your home world. The top 300 on each physical data center are paid.",
+];
+
 export const NAMED_SWAPS = [
   "Treant: Acorn Bomb is a Nightmare you can keep casting while the beast is out. It is a Trick, not the one Borrow.",
   "Coeurl: Blaster is a paralysis and a damage cut.",
